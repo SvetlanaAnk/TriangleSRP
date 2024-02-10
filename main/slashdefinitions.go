@@ -1,0 +1,36 @@
+package main
+
+import (
+	"github.com/bwmarrin/discordgo"
+)
+
+var (
+	integerOptionMinValue = 1.0
+	commands              = []*discordgo.ApplicationCommand{
+		{
+			Name:        "add-kill",
+			Description: "Add a kill to the SRP sheet",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "zkill-link",
+					Description: "The Zkill link of the lost ship",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user who lost the ship, or should receive the srp for the ship",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "srp-value",
+					Description: "Set a custom SRP amount for this kill, in millions of isk",
+					MinValue:    &integerOptionMinValue,
+					Required:    false,
+				},
+			},
+		},
+	}
+)
