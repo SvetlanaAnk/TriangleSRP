@@ -63,5 +63,48 @@ var (
 				},
 			},
 		},
+		{
+			Name:        "update-loss",
+			Description: "Update the srp on a loss. Fc only!",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "link",
+					Description: "The zkill link of the lost ship",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user who lost the ship, or should receive the srp",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "srp",
+					Description: "New srp Payout, in millions of isk",
+					MinValue:    &integerOptionMinValue,
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "paid",
+					Description: "New paid status: true or false",
+					Required:    false,
+				},
+			},
+		},
+		{
+			Name:        "paid",
+			Description: "Mark a loss as paid. Fc Only!",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "link",
+					Description: "The zkill link of the lost ship",
+					Required:    true,
+				},
+			},
+		},
 	}
 )

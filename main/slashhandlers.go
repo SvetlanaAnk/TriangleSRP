@@ -13,6 +13,9 @@ var (
 		"add-loss":    addLoss,
 		"add-ship":    addDoctrineShip,
 		"remove-loss": removeLoss,
+		"update-loss": updateLoss,
+		"srp-paid":    srpPaid,
+		"paid":        paid,
 	}
 )
 
@@ -20,8 +23,8 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	userIsFc := isUserFc(interaction)
 	userName := interaction.Member.User.Username
 	optionMap := *generateOptionMap(interaction)
-	warning := ""
-	link := ""
+	var warning string
+	var link string
 	srp := uint64(1)
 
 	if opt, ok := optionMap["link"]; ok {
@@ -37,7 +40,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 
 	loss := *getLossFromLink(parsedLink)
 	if loss != (Losses{}) {
-		sendInteractionResponse(session, interaction, "Link has already been submitted.")
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Link has already been submitted\n%v", link))
 		return
 	}
 
@@ -90,7 +93,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	if creationResult.Error != nil {
 		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error submitting Link. %v", link))
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Submitted successfully for amount: %v million isk\nFor Capsuleer: %v\n%s", srp, userName, warning))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Submitted successfully\nLoss:%s\nAmount: %v million isk\nFor Capsuleer: %v\n%s", link, srp, userName, warning))
 	}
 }
 
@@ -128,7 +131,115 @@ func addDoctrineShip(session *discordgo.Session, interaction *discordgo.Interact
 
 func removeLoss(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	optionMap := *generateOptionMap(interaction)
-	link := ""
+	var link string
+
+	if opt, ok := optionMap["link"]; ok {
+		link = opt.StringValue()
+	}
+
+	parsedLink := regexMatchZkill(strings.ToLower(link))
+
+	if parsedLink == "" {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Invalid Zkill format. %v", link))
+		return
+	}
+
+	loss := *getLossFromLink(parsedLink)
+	if loss == (Losses{}) {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss not found\n%v", link))
+		return
+	}
+
+	if !isUserFc(interaction) && loss.UserName != interaction.Member.User.Username {
+		sendInteractionResponse(session, interaction, "Only an FC can delete someone else's loss.")
+		return
+	}
+
+	result := db.Where("url = ?", parsedLink).Delete(&loss)
+
+	if result.Error == nil {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss has been removed\n%v", link))
+	} else {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error removing loss: %v\n%v", link, result.Error))
+	}
+}
+
+func updateLoss(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	if !isUserFc(interaction) {
+		sendInteractionResponse(session, interaction, "You are not an FC..")
+		return
+	}
+	srp := uint64(1)
+	optionMap := *generateOptionMap(interaction)
+	var link string
+
+	if opt, ok := optionMap["link"]; ok {
+		link = opt.StringValue()
+	}
+
+	if opt, ok := optionMap["srp"]; ok {
+		srp = uint64(opt.IntValue())
+	}
+
+	parsedLink := regexMatchZkill(strings.ToLower(link))
+
+	if parsedLink == "" {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Invalid Zkill format. %v", link))
+		return
+	}
+
+	loss := *getLossFromLink(parsedLink)
+	if loss == (Losses{}) {
+		sendInteractionResponse(session, interaction, "Loss not found.")
+		return
+	}
+	paid := loss.Paid
+	user := loss.UserName
+
+	if opt, ok := optionMap["user"]; ok {
+		user = opt.UserValue(session).Username
+	}
+
+	if opt, ok := optionMap["paid"]; ok {
+		paid = opt.BoolValue()
+	}
+
+	result := db.Model(&Losses{}).Where("url = ?", parsedLink).Updates(Losses{Srp: srp, Paid: paid, UserName: user})
+
+	if result.Error == nil {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss of: %v\nHas been updated\nSrp: %v\nPaid: %v\nCapsuleer: %v", link, srp, paid, user))
+	} else {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error removing loss: %v\n%v", link, result.Error))
+	}
+}
+
+func srpPaid(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	if !isUserFc(interaction) {
+		sendInteractionResponse(session, interaction, "You are not an FC..")
+		return
+	}
+	batchId := uint(0)
+	row := db.Table("losses").Select("max(batch)").Row()
+	row.Scan(&batchId)
+
+	batchId += 1
+
+	result := db.Model(&Losses{}).Where("paid = ?", false).Updates(&Losses{Paid: true, Batch: batchId})
+	if result.Error != nil {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql error closing backlog: %v", result.Error))
+	} else {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Srp has been marked as paid\nLosses marked as paid: %d\nBatch Id: %d", result.RowsAffected, batchId))
+	}
+}
+
+func paid(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	if !isUserFc(interaction) {
+		sendInteractionResponse(session, interaction, "You are not an FC..")
+		return
+	}
+
+	optionMap := *generateOptionMap(interaction)
+	var link string
 
 	if opt, ok := optionMap["link"]; ok {
 		link = opt.StringValue()
@@ -147,27 +258,12 @@ func removeLoss(session *discordgo.Session, interaction *discordgo.InteractionCr
 		return
 	}
 
-	if !isUserFc(interaction) && loss.UserName != interaction.Member.User.Username {
-		sendInteractionResponse(session, interaction, "Only an FC can delete someone else's loss.")
-		return
-	}
-
-	result := db.Where("url = ?", parsedLink).Delete(&loss)
-
-	if result.Error == nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss with link of: %v\nHas been removed", link))
+	result := db.Model(&Losses{}).Where("url = ?", parsedLink).Update("paid", true)
+	if result.Error != nil {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql error: %v", result.Error))
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error removing loss: %v\n%v", link, result.Error))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss has been marked as paid\n%s", link))
 	}
-
-}
-
-func setkillsrp(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
-
-}
-
-func backlogpaid(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
-
 }
 
 func setsrprate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
@@ -186,5 +282,4 @@ func messageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 	if message.Author.ID == session.State.User.ID {
 		return
 	}
-
 }
