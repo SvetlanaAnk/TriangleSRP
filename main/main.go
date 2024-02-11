@@ -31,12 +31,20 @@ func init() {
 	})
 }
 
+func registerCommand(command *dg.ApplicationCommand, channel chan *dg.ApplicationCommand) {
+	cmd, err := dg_session.ApplicationCommandCreate(dg_session.State.User.ID, GUILD_ID, command)
+	if err != nil {
+		log.Panicf("Cannot create '%v' command %v", command.Name, err)
+	}
+	channel <- cmd
+}
+
 func main() {
 	dg_session.AddHandler(func(s *dg.Session, r *dg.Ready) {
 		log.Printf("Logged in as %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
 
-	dg_session.AddHandler(messageCreate)
+	//dg_session.AddHandler(messageCreate)
 	dg_session.Identify.Intents = dg.IntentsGuildMessages
 
 	err := dg_session.Open()
@@ -48,13 +56,13 @@ func main() {
 	log.Println("Adding commands...")
 
 	registeredCommands := make([]*dg.ApplicationCommand, len(commands))
+	channel := make(chan *dg.ApplicationCommand)
+	for _, command := range commands {
+		go registerCommand(command, channel)
+	}
 
-	for i, v := range commands {
-		cmd, err := dg_session.ApplicationCommandCreate(dg_session.State.User.ID, GUILD_ID, v)
-		if err != nil {
-			log.Panicf("Cannot create '%v' command %v", v.Name, err)
-		}
-		registeredCommands[i] = cmd
+	for i := range commands {
+		registeredCommands[i] = <-channel
 	}
 
 	defer dg_session.Close()

@@ -49,7 +49,11 @@ func getLossIdFromLink(link string) string {
 
 func getJsonFromZkill(link string) []Loss {
 	lossId := getLossIdFromLink(link)
-	resp, err := http.Get(fmt.Sprintf(ZKILL_API_URL, lossId))
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", fmt.Sprintf(ZKILL_API_URL, lossId), nil)
+	req.Header.Set("User-Agent", "Brave Pochven Srp Discord Bot") //Zkill requests that a "User-Agent" header be provided
+	resp, err := client.Do(req)
+
 	if err != nil {
 		log.Printf("ZKILL API GET Failed on link: %s", link)
 		return nil
@@ -180,4 +184,12 @@ func getLossFromLink(link string) *Losses {
 	loss := Losses{}
 	db.Where("url = ?", link).Find(&loss)
 	return &loss
+}
+
+func generateDoctrineShipString(ships []DoctrineShips) string {
+	shipString := ""
+	for _, ship := range ships {
+		shipString += fmt.Sprintf("Name: %s ID: %d Srp: %d Million isk\n", ship.Name, ship.Ship_ID, ship.Srp)
+	}
+	return shipString
 }

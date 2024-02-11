@@ -16,6 +16,7 @@ var (
 		"update-loss":  updateLoss,
 		"srp-paid":     srpPaid,
 		"paid":         paid,
+		"print-ships":  printShips,
 	}
 )
 
@@ -294,6 +295,22 @@ func paid(session *dg.Session, interaction *dg.InteractionCreate) {
 	} else {
 		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss has been marked as paid\n%s", link))
 	}
+}
+
+func printShips(session *dg.Session, interaction *dg.InteractionCreate) {
+	var ships []DoctrineShips
+
+	result := db.Find(&ships)
+	if result.Error != nil {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql error: %v", result.Error))
+	} else {
+		shipString := generateDoctrineShipString(ships)
+		if shipString == "" {
+			shipString = "There are currently no registered doctrine ships"
+		}
+		sendInteractionResponse(session, interaction, shipString)
+	}
+
 }
 
 func setchannel(session *dg.Session, interaction *dg.InteractionCreate) {

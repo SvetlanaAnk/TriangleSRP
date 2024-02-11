@@ -106,5 +106,9 @@ var (
 				},
 			},
 		},
+		{
+			Name:        "print-ships",
+			Description: "Print all current doctrine ships and their srp amounts.",
+		},
 	}
 )
