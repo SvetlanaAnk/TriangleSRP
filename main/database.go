@@ -21,9 +21,9 @@ type Losses struct {
 }
 
 type DoctrineShips struct {
-	ShipID uint32 `gorm:"primaryKey"`
-	Name   string `gorm:"default:''"`
-	Srp    uint64 `gorm:"not null"`
+	Ship_ID uint   `gorm:"primaryKey"`
+	Name    string `gorm:"default:''"`
+	Srp     uint64 `gorm:"not null"`
 }
 
 func init() {

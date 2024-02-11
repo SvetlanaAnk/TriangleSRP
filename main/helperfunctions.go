@@ -121,7 +121,8 @@ func getLossFromApi(link string) EveLoss {
 
 func getDoctrineShip(shipId uint) *DoctrineShips {
 	ship := DoctrineShips{}
-	db.Where("shipid = ?", shipId).First(&ship)
+	db.Where("ship_id = ?", shipId).First(&ship)
+	fmt.Printf("%+v\n", ship)
 	return &ship
 }
 

@@ -109,7 +109,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	if creationResult.Error != nil {
 		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error submitting Link. %v", link))
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Submitted successfully\nLoss: %s\nAmount: %v million isk\nFor Capsuleer: %v\n%s", link, srp, userName, warning))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Submitted successfully\nLoss: %s\nAmount: %v million isk\nCapsuleer: %v\n%s", link, srp, userName, warning))
 	}
 }
 
@@ -120,10 +120,10 @@ func setShipSrp(session *discordgo.Session, interaction *discordgo.InteractionCr
 	}
 	optionMap := *generateOptionMap(interaction)
 
-	shipID := uint32(0)
+	shipID := uint(0)
 	srp := uint64(1)
 	if opt, ok := optionMap["ship-id"]; ok {
-		shipID = uint32(opt.IntValue())
+		shipID = uint(opt.IntValue())
 	}
 	if opt, ok := optionMap["srp"]; ok {
 		srp = uint64(opt.IntValue())
@@ -131,17 +131,22 @@ func setShipSrp(session *discordgo.Session, interaction *discordgo.InteractionCr
 	ship := *getDoctrineShip(uint(shipID))
 	if ship != (DoctrineShips{}) {
 		db.Model(&DoctrineShips{}).Where("id = ?", shipID).Update("srp", srp)
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Ship %d was already present. Srp value has been updated to %d million Isk", shipID, srp))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("ShipId %d was already present. Srp value has been updated to %d million Isk", shipID, srp))
 		return
 	}
+	shipName := getShipNameFromId(uint(shipID))
 
-	ship = DoctrineShips{ShipID: shipID, Name: getShipNameFromId(uint(shipID)), Srp: srp}
+	if shipName == "" {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("ShipId: %d not valid", shipID))
+		return
+	}
+	ship = DoctrineShips{Ship_ID: shipID, Name: shipName, Srp: srp}
 	creationResult := db.Create(&ship)
 
 	if creationResult.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error creating ship %v : %v\n%v", ship.ShipID, ship.Name, creationResult.Error))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error creating ship %v : %v\n%v", ship.Ship_ID, ship.Name, creationResult.Error))
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Doctrine ship %v : %s added with an SRP value of %d million Isk", shipID, ship.Name, srp))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Doctrine ship %s ID: %d added with an SRP value of %d million Isk", ship.Name, shipID, srp))
 	}
 }
 
