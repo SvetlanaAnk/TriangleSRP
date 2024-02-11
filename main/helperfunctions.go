@@ -119,3 +119,65 @@ func getLossFromApi(link string) ([]Loss, EveLoss) {
 	log.Printf("Zkill Id: %v", loss[0].KillmailId)
 	return loss, eveLoss
 }
+
+func getDoctrineShip(shipId uint) *DoctrineShips {
+	ship := DoctrineShips{}
+	db.Where("id = ?", shipId).First(&ship)
+	return &ship
+}
+
+func isUserFc(interaction *discordgo.InteractionCreate) bool {
+	for _, role := range interaction.Member.Roles {
+		if role == "FC" {
+			return true
+		}
+	}
+	return interaction.Member.User.Username == "theblob8584"
+}
+
+func isPochvenSystem(systemId uint32) bool {
+	for _, id := range PochvenSystems {
+		if systemId == id {
+			return true
+		}
+	}
+	return false
+}
+
+func getShipNameFromId(shipId uint) string {
+	doctrineShip := *getDoctrineShip(shipId)
+	if doctrineShip != (DoctrineShips{}) {
+		return doctrineShip.Name
+	}
+
+	resp, err := http.Get(fmt.Sprintf(EVE_TYPE_URL, shipId))
+	if err != nil {
+		log.Printf("EVE API GET Failed on id: %v", shipId)
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("EVE API GET Failed with status code %d on id: %d", resp.StatusCode, shipId)
+		return ""
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("ZKILL API GET Failed on response parsing")
+		return ""
+	}
+	ship := Ship{}
+	err = json.Unmarshal(data, &ship)
+	if err != nil {
+		log.Printf("Eve JSON Unmarshal Error: %v", err)
+		return ""
+	}
+	return ship.Name
+}
+
+func getLossFromLink(link string) *Losses {
+	loss := Losses{}
+	db.Where("url = ?", link).Find(&loss)
+	return &loss
+}

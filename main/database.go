@@ -12,19 +12,18 @@ var (
 )
 
 type Losses struct {
-	ID       uint   `gorm:"primaryKey"`
+	Url      string `gorm:"primaryKey"`
 	UserName string `gorm:"index; not null; size:40"`
-	Url      string `gorm:"uniqueIndex;size:256; not null"`
 	Paid     bool   `gorm:"default:false"`
 	Batch    uint
-	Srp      uint `gorm:"not null; default 1"`
-	ShipId   uint `gorm:"not null; default 1"`
+	Srp      uint64 `gorm:"not null; default 1"`
+	ShipId   uint   `gorm:"not null; default 1"`
 }
 
-type DoctineShips struct {
-	ID            uint32 `gorm:"primaryKey"`
-	Name          string `gorm:"default:''"`
-	MaximumPayout uint64 `gorm:"not null"`
+type DoctrineShips struct {
+	ID   uint32 `gorm:"primaryKey"`
+	Name string `gorm:"default:''"`
+	Srp  uint64 `gorm:"not null"`
 }
 
 func init() {
@@ -37,5 +36,5 @@ func init() {
 	}
 
 	db.AutoMigrate(&Losses{})
-	db.AutoMigrate(&DoctineShips{})
+	db.AutoMigrate(&DoctrineShips{})
 }

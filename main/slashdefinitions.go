@@ -8,8 +8,8 @@ var (
 	integerOptionMinValue = 1.0
 	commands              = []*discordgo.ApplicationCommand{
 		{
-			Name:        "add-kill",
-			Description: "Add a kill to the SRP sheet",
+			Name:        "add-loss",
+			Description: "Add a loss to the SRP sheet",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
@@ -29,6 +29,37 @@ var (
 					Description: "Set a SRP amount for this kill, in millions of isk",
 					MinValue:    &integerOptionMinValue,
 					Required:    false,
+				},
+			},
+		},
+		{
+			Name:        "add-ship",
+			Description: "Add a doctrine ship with an SRP value. FC Only",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "ship-id",
+					Description: "The ship id. Check the ship's zkill page url for this id",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "srp",
+					Description: "Max srp payout, in millions of isk",
+					MinValue:    &integerOptionMinValue,
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "remove-loss",
+			Description: "Add a doctrine ship with an SRP value. FC Only",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "link",
+					Description: "The zkill link of the lost ship",
+					Required:    true,
 				},
 			},
 		},
