@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/bwmarrin/discordgo"
+	dg "github.com/bwmarrin/discordgo"
 )
 
-func sendInteractionResponse(session *discordgo.Session, interaction *discordgo.InteractionCreate, message string) {
-	session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
+func sendInteractionResponse(session *dg.Session, interaction *dg.InteractionCreate, message string) {
+	session.InteractionRespond(interaction.Interaction, &dg.InteractionResponse{
+		Type: dg.InteractionResponseChannelMessageWithSource,
+		Data: &dg.InteractionResponseData{
 			Content: message,
 		},
 	})
@@ -29,7 +29,7 @@ func regexMatchZkill(link string) string {
 	return results[0]
 }
 
-func generateOptionMap(interaction *discordgo.InteractionCreate) *optionMap {
+func generateOptionMap(interaction *dg.InteractionCreate) *optionMap {
 	options := interaction.ApplicationCommandData().Options
 	optionMap := make(optionMap, len(options))
 	for _, opt := range options {
@@ -126,7 +126,7 @@ func getDoctrineShip(shipId uint) *DoctrineShips {
 	return &ship
 }
 
-func isUserFc(interaction *discordgo.InteractionCreate) bool {
+func isUserFc(interaction *dg.InteractionCreate) bool {
 	for _, role := range interaction.Member.Roles {
 		if role == "FC" {
 			return true

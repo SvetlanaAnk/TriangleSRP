@@ -5,13 +5,13 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/bwmarrin/discordgo"
+	dg "github.com/bwmarrin/discordgo"
 )
 
 var (
 	DISCORD_TOKEN string
 	GUILD_ID      string
-	dg_session    *discordgo.Session
+	dg_session    *dg.Session
 )
 
 func init() {
@@ -19,12 +19,12 @@ func init() {
 	GUILD_ID = os.Getenv("GUILD_ID")
 
 	var err error
-	dg_session, err = discordgo.New("Bot " + DISCORD_TOKEN)
+	dg_session, err = dg.New("Bot " + DISCORD_TOKEN)
 	if err != nil {
 		log.Fatalf("Invalid bot paramters: %v", err)
 	}
 
-	dg_session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	dg_session.AddHandler(func(s *dg.Session, i *dg.InteractionCreate) {
 		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 			h(s, i)
 		}
@@ -32,12 +32,12 @@ func init() {
 }
 
 func main() {
-	dg_session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	dg_session.AddHandler(func(s *dg.Session, r *dg.Ready) {
 		log.Printf("Logged in as %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
 
 	dg_session.AddHandler(messageCreate)
-	dg_session.Identify.Intents = discordgo.IntentsGuildMessages
+	dg_session.Identify.Intents = dg.IntentsGuildMessages
 
 	err := dg_session.Open()
 
@@ -47,7 +47,7 @@ func main() {
 
 	log.Println("Adding commands...")
 
-	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
+	registeredCommands := make([]*dg.ApplicationCommand, len(commands))
 
 	for i, v := range commands {
 		cmd, err := dg_session.ApplicationCommandCreate(dg_session.State.User.ID, GUILD_ID, v)

@@ -5,11 +5,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
+	dg "github.com/bwmarrin/discordgo"
 )
 
 var (
-	commandHandlers = map[string]func(session *discordgo.Session, interaction *discordgo.InteractionCreate){
+	commandHandlers = map[string]func(session *dg.Session, interaction *dg.InteractionCreate){
 		"add-loss":     addLoss,
 		"set-ship-srp": setShipSrp,
 		"remove-loss":  removeLoss,
@@ -19,7 +19,7 @@ var (
 	}
 )
 
-func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func addLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	userIsFc := isUserFc(interaction)
 	userName := interaction.Member.User.Username
 	optionMap := *generateOptionMap(interaction)
@@ -113,7 +113,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	}
 }
 
-func setShipSrp(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func setShipSrp(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction) {
 		sendInteractionResponse(session, interaction, "You are not an FC..")
 		return
@@ -150,7 +150,7 @@ func setShipSrp(session *discordgo.Session, interaction *discordgo.InteractionCr
 	}
 }
 
-func removeLoss(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func removeLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	optionMap := *generateOptionMap(interaction)
 	var link string
 
@@ -185,7 +185,7 @@ func removeLoss(session *discordgo.Session, interaction *discordgo.InteractionCr
 	}
 }
 
-func updateLoss(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func updateLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction) {
 		sendInteractionResponse(session, interaction, "You are not an FC..")
 		return
@@ -243,7 +243,7 @@ func updateLoss(session *discordgo.Session, interaction *discordgo.InteractionCr
 	}
 }
 
-func srpPaid(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func srpPaid(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction) {
 		sendInteractionResponse(session, interaction, "You are not an FC..")
 		return
@@ -262,7 +262,7 @@ func srpPaid(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	}
 }
 
-func paid(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func paid(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction) {
 		sendInteractionResponse(session, interaction, "You are not an FC..")
 		return
@@ -296,15 +296,15 @@ func paid(session *discordgo.Session, interaction *discordgo.InteractionCreate) 
 	}
 }
 
-func setchannel(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func setchannel(session *dg.Session, interaction *dg.InteractionCreate) {
 
 }
 
-func getsrptotals(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func getsrptotals(session *dg.Session, interaction *dg.InteractionCreate) {
 
 }
 
-func messageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
+func messageCreate(session *dg.Session, message *dg.MessageCreate) {
 	if message.Author.ID == session.State.User.ID {
 		return
 	}

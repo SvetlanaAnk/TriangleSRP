@@ -1,8 +1,8 @@
 package main
 
-import "github.com/bwmarrin/discordgo"
+import dg "github.com/bwmarrin/discordgo"
 
-type optionMap map[string]*discordgo.ApplicationCommandInteractionDataOption
+type optionMap map[string]*dg.ApplicationCommandInteractionDataOption
 
 const ZKILL_API_URL string = "https://zkillboard.com/api/kills/killID/%v/"
 const EVE_API_URL string = "https://esi.evetech.net/latest/killmails/%d/%s/?datasource=tranquility"

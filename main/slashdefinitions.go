@@ -1,30 +1,30 @@
 package main
 
 import (
-	"github.com/bwmarrin/discordgo"
+	dg "github.com/bwmarrin/discordgo"
 )
 
 var (
 	integerOptionMinValue = 1.0
-	commands              = []*discordgo.ApplicationCommand{
+	commands              = []*dg.ApplicationCommand{
 		{
 			Name:        "add-loss",
 			Description: "Add a loss to the Srp sheet",
-			Options: []*discordgo.ApplicationCommandOption{
+			Options: []*dg.ApplicationCommandOption{
 				{
-					Type:        discordgo.ApplicationCommandOptionString,
+					Type:        dg.ApplicationCommandOptionString,
 					Name:        "link",
 					Description: "The Zkill link of the loss",
 					Required:    true,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionUser,
+					Type:        dg.ApplicationCommandOptionUser,
 					Name:        "user",
 					Description: "The user who lost the ship, or should receive Srp",
 					Required:    false,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionInteger,
+					Type:        dg.ApplicationCommandOptionInteger,
 					Name:        "srp",
 					Description: "Set an Srp amount for this kill, in millions of isk",
 					MinValue:    &integerOptionMinValue,
@@ -35,15 +35,15 @@ var (
 		{
 			Name:        "set-ship-srp",
 			Description: "Add or update a doctrine ship with an Srp value",
-			Options: []*discordgo.ApplicationCommandOption{
+			Options: []*dg.ApplicationCommandOption{
 				{
-					Type:        discordgo.ApplicationCommandOptionInteger,
+					Type:        dg.ApplicationCommandOptionInteger,
 					Name:        "ship-id",
 					Description: "The ship id. Check the ship's zkill page url for this id",
 					Required:    true,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionInteger,
+					Type:        dg.ApplicationCommandOptionInteger,
 					Name:        "srp",
 					Description: "Max srp payout, in millions of isk",
 					MinValue:    &integerOptionMinValue,
@@ -54,9 +54,9 @@ var (
 		{
 			Name:        "remove-loss",
 			Description: "Remove a loss from the Srp sheet",
-			Options: []*discordgo.ApplicationCommandOption{
+			Options: []*dg.ApplicationCommandOption{
 				{
-					Type:        discordgo.ApplicationCommandOptionString,
+					Type:        dg.ApplicationCommandOptionString,
 					Name:        "link",
 					Description: "The zkill link of the loss",
 					Required:    true,
@@ -66,28 +66,28 @@ var (
 		{
 			Name:        "update-loss",
 			Description: "Update the Srp on a loss",
-			Options: []*discordgo.ApplicationCommandOption{
+			Options: []*dg.ApplicationCommandOption{
 				{
-					Type:        discordgo.ApplicationCommandOptionString,
+					Type:        dg.ApplicationCommandOptionString,
 					Name:        "link",
 					Description: "The zkill link of the lost ship",
 					Required:    true,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionUser,
+					Type:        dg.ApplicationCommandOptionUser,
 					Name:        "user",
 					Description: "The user who lost the ship, or should receive the Srp",
 					Required:    false,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionInteger,
+					Type:        dg.ApplicationCommandOptionInteger,
 					Name:        "srp",
 					Description: "New Srp Payout, in millions of isk",
 					MinValue:    &integerOptionMinValue,
 					Required:    false,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Type:        dg.ApplicationCommandOptionBoolean,
 					Name:        "paid",
 					Description: "New paid status: true or false",
 					Required:    false,
@@ -97,9 +97,9 @@ var (
 		{
 			Name:        "paid",
 			Description: "Mark a loss as paid",
-			Options: []*discordgo.ApplicationCommandOption{
+			Options: []*dg.ApplicationCommandOption{
 				{
-					Type:        discordgo.ApplicationCommandOptionString,
+					Type:        dg.ApplicationCommandOptionString,
 					Name:        "link",
 					Description: "The zkill link of the lost ship",
 					Required:    true,
