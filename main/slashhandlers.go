@@ -131,9 +131,14 @@ func setShipSrp(session *dg.Session, interaction *dg.InteractionCreate) {
 	}
 	ship := *getDoctrineShip(uint(shipID))
 	if ship != (DoctrineShips{}) {
-		db.Model(&DoctrineShips{}).Where("id = ?", shipID).Update("srp", srp)
-		sendInteractionResponse(session, interaction, fmt.Sprintf("ShipId %d was already present. Srp value has been updated to %d million Isk", shipID, srp))
-		return
+		result := db.Model(&DoctrineShips{}).Where("ship_id = ?", shipID).Update("srp", srp)
+		if result.Error == nil && result.RowsAffected == 1 {
+			sendInteractionResponse(session, interaction, fmt.Sprintf("ShipId %d was already present. Srp value has been updated to %d million Isk", shipID, srp))
+			return
+		} else {
+			sendInteractionResponse(session, interaction, fmt.Sprintf("Sql Error Updating Ship: %v", result.Error))
+			return
+		}
 	}
 	shipName := getShipNameFromId(uint(shipID))
 
@@ -310,7 +315,6 @@ func printShips(session *dg.Session, interaction *dg.InteractionCreate) {
 		}
 		sendInteractionResponse(session, interaction, shipString)
 	}
-
 }
 
 func setchannel(session *dg.Session, interaction *dg.InteractionCreate) {
