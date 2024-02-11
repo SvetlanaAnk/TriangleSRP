@@ -23,7 +23,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	userIsFc := isUserFc(interaction)
 	userName := interaction.Member.User.Username
 	optionMap := *generateOptionMap(interaction)
-	var warning string
+	warning := ""
 	var link string
 	srp := uint64(1)
 
@@ -31,6 +31,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 		link = opt.StringValue()
 	}
 
+	// Verify that the link is valid, and pass it through ToLower() and regex
 	parsedLink := regexMatchZkill(strings.ToLower(link))
 
 	if parsedLink == "" {
@@ -38,41 +39,46 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 		return
 	}
 
+	// Check if this loss already exists on the Srp sheet
 	loss := *getLossFromLink(parsedLink)
 	if loss != (Losses{}) {
 		sendInteractionResponse(session, interaction, fmt.Sprintf("Link has already been submitted\n%v", link))
 		return
 	}
 
-	lossData, eveLossData := getLossFromApi(parsedLink)
-	if lossData != nil && eveLossData != (EveLoss{}) {
-		log.Print(lossData[0].KillmailId)
-		log.Print(eveLossData.Victim.ShipTypeId)
-	}
+	//Query the Zkill and Eve api's for needed information
+	eveLossData := getLossFromApi(parsedLink)
 
 	ship := getDoctrineShip(uint(eveLossData.Victim.ShipTypeId))
 
+	// Check if the ship is a doctrine ship.
 	if *ship == (DoctrineShips{}) {
 		if !userIsFc {
 			log.Println("Ship not doctrine ship")
 			sendInteractionResponse(session, interaction, "Ship is not a valid doctrine ship, please ask an FC to override")
 			return
 		} else {
-			warning += "Warning: Ship is not a registered doctrine hull.\nFc has overriden this check\n"
+			warning += "\tShip is not a registered doctrine hull\n"
 		}
 	} else {
 		srp = ship.Srp
 	}
 
+	// Check if the ship died in pochven
 	if !isPochvenSystem(eveLossData.SolarSystemId) {
 		if !userIsFc {
 			sendInteractionResponse(session, interaction, "This ship was destroyed outside of Pochven, please ask an FC to override")
 			return
 		} else {
-			warning += "Warning: Ship was not destroyed in Pochven.\nFc has overriden this check"
+			warning += "\tShip was not destroyed in Pochven\n"
 		}
 	}
 
+	if warning != "" {
+		warning = "Warning(s):\n" + warning + "Fc has overriden"
+	}
+
+	// If a custom user was selected to receive srp, use that instead
 	if opt, ok := optionMap["user"]; ok {
 		userName = opt.UserValue(session).Username
 
@@ -86,6 +92,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 		}
 	}
 
+	// Get the custom srp amount if relevant, only Fc's can pass in this value
 	if opt, ok := optionMap["srp"]; ok {
 		srp = uint64(opt.IntValue())
 		if !isUserFc(interaction) {
@@ -94,6 +101,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 		}
 	}
 
+	//Submit the loss to the database, and report the result to the user
 	loss = Losses{UserName: userName, Url: parsedLink, Srp: srp, ShipId: uint(eveLossData.Victim.ShipTypeId)}
 
 	creationResult := db.Create(&loss)
@@ -101,7 +109,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	if creationResult.Error != nil {
 		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error submitting Link. %v", link))
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Submitted successfully\nLoss:%s\nAmount: %v million isk\nFor Capsuleer: %v\n%s", link, srp, userName, warning))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Submitted successfully\nLoss: %s\nAmount: %v million isk\nFor Capsuleer: %v\n%s", link, srp, userName, warning))
 	}
 }
 
@@ -127,11 +135,11 @@ func setShipSrp(session *discordgo.Session, interaction *discordgo.InteractionCr
 		return
 	}
 
-	ship = DoctrineShips{ID: shipID, Name: getShipNameFromId(uint(shipID)), Srp: srp}
+	ship = DoctrineShips{ShipID: shipID, Name: getShipNameFromId(uint(shipID)), Srp: srp}
 	creationResult := db.Create(&ship)
 
 	if creationResult.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error creating ship %v : %v\n%v", ship.ID, ship.Name, creationResult.Error))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error creating ship %v : %v\n%v", ship.ShipID, ship.Name, creationResult.Error))
 	} else {
 		sendInteractionResponse(session, interaction, fmt.Sprintf("Doctrine ship %v : %s added with an SRP value of %d million Isk", shipID, ship.Name, srp))
 	}
@@ -224,7 +232,7 @@ func updateLoss(session *discordgo.Session, interaction *discordgo.InteractionCr
 	result := db.Model(&Losses{}).Where("url = ?", parsedLink).Updates(Losses{Srp: srp, Paid: paid, UserName: user})
 
 	if result.Error == nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss of: %v\nHas been updated\nSrp: %v\nPaid: %v\nCapsuleer: %v", link, srp, paid, user))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss of: %v\nHas been updated\nSrp: %v million isk\nPaid: %v\nCapsuleer: %v", link, srp, paid, user))
 	} else {
 		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error removing loss: %v\n%v", link, result.Error))
 	}
@@ -281,10 +289,6 @@ func paid(session *discordgo.Session, interaction *discordgo.InteractionCreate) 
 	} else {
 		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss has been marked as paid\n%s", link))
 	}
-}
-
-func updateShipSrp(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
-
 }
 
 func setchannel(session *discordgo.Session, interaction *discordgo.InteractionCreate) {

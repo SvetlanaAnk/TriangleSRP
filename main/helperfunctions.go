@@ -104,24 +104,24 @@ func getJsonFromEve(link string, killmailid uint64, hash string) EveLoss {
 }
 
 // [{"killmail_id":115339013,"zkb":{"locationID":40004728,"hash":"d7b2b4bbb7e656c39528f55e28c313d26cdeab2b","fittedValue":66661524134.69,"droppedValue":1921508342.71,"destroyedValue":65209704820.74,"totalValue":67131213163.45,"points":1,"npc":false,"solo":false,"awox":false}}]
-func getLossFromApi(link string) ([]Loss, EveLoss) {
+func getLossFromApi(link string) EveLoss {
 	loss := getJsonFromZkill(link)
 	if loss == nil {
-		return nil, EveLoss{}
+		return EveLoss{}
 	}
 
 	eveLoss := getJsonFromEve(link, loss[0].KillmailId, loss[0].Data.Hash)
 
 	if (eveLoss == EveLoss{}) {
-		return nil, EveLoss{}
+		return EveLoss{}
 	}
 
-	return loss, eveLoss
+	return eveLoss
 }
 
 func getDoctrineShip(shipId uint) *DoctrineShips {
 	ship := DoctrineShips{}
-	db.Where("id = ?", shipId).First(&ship)
+	db.Where("shipid = ?", shipId).First(&ship)
 	return &ship
 }
 
