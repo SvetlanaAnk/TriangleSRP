@@ -13,7 +13,7 @@ var (
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "zkill-link",
+					Name:        "link",
 					Description: "The Zkill link of the lost ship",
 					Required:    true,
 				},
@@ -21,11 +21,11 @@ var (
 					Type:        discordgo.ApplicationCommandOptionUser,
 					Name:        "user",
 					Description: "The user who lost the ship, or should receive the srp for the ship",
-					Required:    true,
+					Required:    false,
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
-					Name:        "srp-value",
+					Name:        "srp",
 					Description: "Set a custom SRP amount for this kill, in millions of isk",
 					MinValue:    &integerOptionMinValue,
 					Required:    false,
