@@ -9,12 +9,10 @@ import (
 )
 
 var (
-	commandHandlers = map[string]callbackFunction{
+	commandHandlers = map[string]func(session *discordgo.Session, interaction *discordgo.InteractionCreate){
 		"add-kill": addKill,
 	}
 )
-
-type callbackFunction func(session *discordgo.Session, interaction *discordgo.InteractionCreate)
 
 func addKill(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 
@@ -38,8 +36,11 @@ func addKill(session *discordgo.Session, interaction *discordgo.InteractionCreat
 		return
 	}
 
-	zkilldata := getLossFromApi(parsedLink)
-	log.Print(zkilldata)
+	lossData, eveLossData := getLossFromApi(parsedLink)
+	if lossData != nil && eveLossData != (EveLoss{}) {
+		log.Print(lossData[0].KillmailId)
+		log.Print(eveLossData.Victim.ShipTypeId)
+	}
 
 	userName := interaction.Member.User.Username
 	srp := uint(1)

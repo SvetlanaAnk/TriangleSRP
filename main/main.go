@@ -23,9 +23,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("Invalid bot paramters: %v", err)
 	}
-}
 
-func init() {
 	dg_session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 			h(s, i)

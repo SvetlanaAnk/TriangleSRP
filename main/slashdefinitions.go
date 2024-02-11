@@ -20,13 +20,13 @@ var (
 				{
 					Type:        discordgo.ApplicationCommandOptionUser,
 					Name:        "user",
-					Description: "The user who lost the ship, or should receive the srp for the ship",
+					Description: "The user who lost the ship, or should receive the srp",
 					Required:    false,
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "srp",
-					Description: "Set a custom SRP amount for this kill, in millions of isk",
+					Description: "Set a SRP amount for this kill, in millions of isk",
 					MinValue:    &integerOptionMinValue,
 					Required:    false,
 				},

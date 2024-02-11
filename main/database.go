@@ -7,8 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const DATABASE_FILE string = "srpmain.sqlite"
-
 var (
 	db *gorm.DB
 )
@@ -20,6 +18,13 @@ type Losses struct {
 	Paid     bool   `gorm:"default:false"`
 	Batch    uint
 	Srp      uint `gorm:"not null; default 1"`
+	ShipId   uint `gorm:"not null; default 1"`
+}
+
+type DoctineShips struct {
+	ID            uint32 `gorm:"primaryKey"`
+	Name          string `gorm:"default:''"`
+	MaximumPayout uint64 `gorm:"not null"`
 }
 
 func init() {
@@ -32,4 +37,5 @@ func init() {
 	}
 
 	db.AutoMigrate(&Losses{})
+	db.AutoMigrate(&DoctineShips{})
 }
