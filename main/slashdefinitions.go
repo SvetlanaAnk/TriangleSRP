@@ -9,32 +9,32 @@ var (
 	commands              = []*discordgo.ApplicationCommand{
 		{
 			Name:        "add-loss",
-			Description: "Add a loss to the SRP sheet",
+			Description: "Add a loss to the Srp sheet",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "link",
-					Description: "The Zkill link of the lost ship",
+					Description: "The Zkill link of the loss",
 					Required:    true,
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionUser,
 					Name:        "user",
-					Description: "The user who lost the ship, or should receive the srp",
+					Description: "The user who lost the ship, or should receive Srp",
 					Required:    false,
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "srp",
-					Description: "Set a SRP amount for this kill, in millions of isk",
+					Description: "Set an Srp amount for this kill, in millions of isk",
 					MinValue:    &integerOptionMinValue,
 					Required:    false,
 				},
 			},
 		},
 		{
-			Name:        "add-ship",
-			Description: "Add a doctrine ship with an SRP value. FC Only",
+			Name:        "set-ship-srp",
+			Description: "Add or update a doctrine ship with an Srp value",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
@@ -53,19 +53,19 @@ var (
 		},
 		{
 			Name:        "remove-loss",
-			Description: "Add a doctrine ship with an SRP value. FC Only",
+			Description: "Remove a loss from the Srp sheet",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "link",
-					Description: "The zkill link of the lost ship",
+					Description: "The zkill link of the loss",
 					Required:    true,
 				},
 			},
 		},
 		{
 			Name:        "update-loss",
-			Description: "Update the srp on a loss. Fc only!",
+			Description: "Update the Srp on a loss",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
@@ -76,13 +76,13 @@ var (
 				{
 					Type:        discordgo.ApplicationCommandOptionUser,
 					Name:        "user",
-					Description: "The user who lost the ship, or should receive the srp",
+					Description: "The user who lost the ship, or should receive the Srp",
 					Required:    false,
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "srp",
-					Description: "New srp Payout, in millions of isk",
+					Description: "New Srp Payout, in millions of isk",
 					MinValue:    &integerOptionMinValue,
 					Required:    false,
 				},
@@ -96,7 +96,7 @@ var (
 		},
 		{
 			Name:        "paid",
-			Description: "Mark a loss as paid. Fc Only!",
+			Description: "Mark a loss as paid",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,

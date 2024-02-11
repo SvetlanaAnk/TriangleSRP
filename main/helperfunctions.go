@@ -116,7 +116,6 @@ func getLossFromApi(link string) ([]Loss, EveLoss) {
 		return nil, EveLoss{}
 	}
 
-	log.Printf("Zkill Id: %v", loss[0].KillmailId)
 	return loss, eveLoss
 }
 

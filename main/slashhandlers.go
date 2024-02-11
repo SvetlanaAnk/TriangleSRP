@@ -10,12 +10,12 @@ import (
 
 var (
 	commandHandlers = map[string]func(session *discordgo.Session, interaction *discordgo.InteractionCreate){
-		"add-loss":    addLoss,
-		"add-ship":    addDoctrineShip,
-		"remove-loss": removeLoss,
-		"update-loss": updateLoss,
-		"srp-paid":    srpPaid,
-		"paid":        paid,
+		"add-loss":     addLoss,
+		"set-ship-srp": setShipSrp,
+		"remove-loss":  removeLoss,
+		"update-loss":  updateLoss,
+		"srp-paid":     srpPaid,
+		"paid":         paid,
 	}
 )
 
@@ -34,7 +34,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	parsedLink := regexMatchZkill(strings.ToLower(link))
 
 	if parsedLink == "" {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Invalid Zkill format. %v", link))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Invalid Zkill format: %v", link))
 		return
 	}
 
@@ -50,38 +50,46 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 		log.Print(eveLossData.Victim.ShipTypeId)
 	}
 
-	if *getDoctrineShip(uint(eveLossData.Victim.ShipTypeId)) != (DoctrineShips{}) {
+	ship := getDoctrineShip(uint(eveLossData.Victim.ShipTypeId))
+
+	if *ship == (DoctrineShips{}) {
 		if !userIsFc {
-			sendInteractionResponse(session, interaction, "Ship is not a valid doctrine ship, please ask an FC to override.")
+			log.Println("Ship not doctrine ship")
+			sendInteractionResponse(session, interaction, "Ship is not a valid doctrine ship, please ask an FC to override")
 			return
 		} else {
-			warning += "Warning: Ship is not a registered doctrine hull.\nFc has overriden this check.\n"
+			warning += "Warning: Ship is not a registered doctrine hull.\nFc has overriden this check\n"
 		}
+	} else {
+		srp = ship.Srp
 	}
 
 	if !isPochvenSystem(eveLossData.SolarSystemId) {
 		if !userIsFc {
-			sendInteractionResponse(session, interaction, "This ship was destroyed outside of Pochven, please ask an FC to override.")
+			sendInteractionResponse(session, interaction, "This ship was destroyed outside of Pochven, please ask an FC to override")
 			return
 		} else {
-			warning += "Warning: Ship was not destroyed in Pochven.\nFc has overriden this check."
+			warning += "Warning: Ship was not destroyed in Pochven.\nFc has overriden this check"
 		}
-	}
-
-	ship := getDoctrineShip(loss.ShipId)
-
-	if *ship != (DoctrineShips{}) {
-		srp = ship.Srp
 	}
 
 	if opt, ok := optionMap["user"]; ok {
 		userName = opt.UserValue(session).Username
+
+		if userName == session.State.User.Username {
+			sendInteractionResponse(session, interaction, "While I am flattered, I cannot receive Srp since I am a bot.\nPlease select a capsuleer, or at least a fellow bot in Fraternity.")
+			return
+		}
+		if opt.UserValue(session).Bot {
+			sendInteractionResponse(session, interaction, "My fellow bots cannot receive Srp.\nPlease select a capsuleer, or at least a Fraternity member.")
+			return
+		}
 	}
 
 	if opt, ok := optionMap["srp"]; ok {
 		srp = uint64(opt.IntValue())
 		if !isUserFc(interaction) {
-			sendInteractionResponse(session, interaction, "Only an FC can specify a custom SRP amount.")
+			sendInteractionResponse(session, interaction, "Only an FC can specify a custom Srp amount.")
 			return
 		}
 	}
@@ -97,7 +105,7 @@ func addLoss(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	}
 }
 
-func addDoctrineShip(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func setShipSrp(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	if !isUserFc(interaction) {
 		sendInteractionResponse(session, interaction, "You are not an FC..")
 		return
@@ -169,6 +177,7 @@ func updateLoss(session *discordgo.Session, interaction *discordgo.InteractionCr
 		sendInteractionResponse(session, interaction, "You are not an FC..")
 		return
 	}
+
 	srp := uint64(1)
 	optionMap := *generateOptionMap(interaction)
 	var link string
@@ -198,6 +207,14 @@ func updateLoss(session *discordgo.Session, interaction *discordgo.InteractionCr
 
 	if opt, ok := optionMap["user"]; ok {
 		user = opt.UserValue(session).Username
+		if user == session.State.User.Username {
+			sendInteractionResponse(session, interaction, "While I am flattered, I cannot receive Srp since I am a bot.\nPlease select a capsuleer, or at least a fellow bot in Fraternity.")
+			return
+		}
+		if opt.UserValue(session).Bot {
+			sendInteractionResponse(session, interaction, "My fellow bots cannot receive Srp.\nPlease select a capsuleer, or at least a Fraternity member.")
+			return
+		}
 	}
 
 	if opt, ok := optionMap["paid"]; ok {
@@ -228,7 +245,7 @@ func srpPaid(session *discordgo.Session, interaction *discordgo.InteractionCreat
 	if result.Error != nil {
 		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql error closing backlog: %v", result.Error))
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Srp has been marked as paid\nLosses marked as paid: %d\nBatch Id: %d", result.RowsAffected, batchId))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Srp has been marked as paid\nLosses marked as paid: %d\nBatch Id: %d\nPlease save this batch id in case you need to reverse this action", result.RowsAffected, batchId))
 	}
 }
 
@@ -266,7 +283,7 @@ func paid(session *discordgo.Session, interaction *discordgo.InteractionCreate) 
 	}
 }
 
-func setsrprate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func updateShipSrp(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 
 }
 
