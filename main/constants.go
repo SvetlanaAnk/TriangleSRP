@@ -13,19 +13,19 @@ var SRP_CHANNEL_MAP = make(map[string]string)
 
 type Loss struct {
 	KillmailId    uint64
-	LocationId    uint64
 	Hash          string
 	TotalValue    float32
 	SolarSystemId uint32
 	ShipTypeId    uint32
 }
+
+// Json Objects
 type ZkillLoss struct {
 	KillmailId uint64        `json:"killmail_id"`
 	Data       ZkillLossData `json:"zkb"`
 }
 
 type ZkillLossData struct {
-	LocationId uint64  `json:"locationID"`
 	Hash       string  `json:"hash"`
 	TotalValue float32 `json:"totalValue"`
 }

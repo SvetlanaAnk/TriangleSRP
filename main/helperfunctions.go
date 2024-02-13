@@ -204,7 +204,6 @@ func getLossFromApi(link string) *Loss {
 	}
 	loss := Loss{
 		KillmailId:    zkillLoss[0].KillmailId,
-		LocationId:    zkillLoss[0].Data.LocationId,
 		Hash:          zkillLoss[0].Data.Hash,
 		TotalValue:    zkillLoss[0].Data.TotalValue,
 		SolarSystemId: eveLoss.SolarSystemId,
