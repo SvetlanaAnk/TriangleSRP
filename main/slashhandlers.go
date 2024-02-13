@@ -17,9 +17,11 @@ var (
 		"srp-paid":       srpPaid,
 		"paid":           paid,
 		"print-ships":    printShips,
-		"srp-total":      srpTotal,
+		"srp-totals":     srpTotals,
 		"user-srp-total": userSrpTotal,
 		"remove-ship":    removeDoctrineShip,
+		"set-channel":    setSrpChannel,
+		"mark-user-paid": markUserPaid,
 	}
 )
 
@@ -165,6 +167,7 @@ func updateLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 		sendInteractionResponse(session, interaction, "Loss not found.")
 		return
 	}
+
 	paid := loss.Paid
 	user := loss.UserName
 
@@ -246,12 +249,33 @@ func paid(session *dg.Session, interaction *dg.InteractionCreate) {
 	}
 }
 
+func markUserPaid(session *dg.Session, interaction *dg.InteractionCreate) {
+	if !isUserFc(interaction.Member) {
+		sendInteractionResponse(session, interaction, "You are not an FC..")
+		return
+	}
+
+	optionMap := *generateOptionMap(interaction)
+	var userName string
+
+	if opt, ok := optionMap["user"]; ok {
+		userName = opt.UserValue(session).Username
+	}
+
+	res := db.Model(&Losses{}).Where("user_name = ?", userName).Update("paid", true)
+	if res.RowsAffected == 0 {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("No losses found for user: %s", userName))
+	} else {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Member: %s's losses have been marked as paid.\nNumber paid: %d", userName, res.RowsAffected))
+	}
+}
+
 func printShips(session *dg.Session, interaction *dg.InteractionCreate) {
 	var ships []DoctrineShips
 
 	result := db.Find(&ships)
 	if result.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql error: %v", result.Error))
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql error querying ships: %v", result.Error))
 	} else {
 		shipString := generateDoctrineShipString(ships)
 		if shipString == "" {
@@ -261,7 +285,7 @@ func printShips(session *dg.Session, interaction *dg.InteractionCreate) {
 	}
 }
 
-func srpTotal(session *dg.Session, interaction *dg.InteractionCreate) {
+func srpTotals(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member) {
 		sendInteractionResponse(session, interaction, "You are not an FC...")
 		return
@@ -292,7 +316,17 @@ func srpTotal(session *dg.Session, interaction *dg.InteractionCreate) {
 		return
 	}
 
-	lossTotals := generateSrpTotalString(losses)
+	printZkill := false
+	if opt, ok := optionMap["include-zkill"]; ok {
+		printZkill = opt.BoolValue()
+	}
+
+	printWarnings := false
+	if opt, ok := optionMap["include-errors"]; ok {
+		printWarnings = opt.BoolValue()
+	}
+
+	lossTotals := generateSrpTotalString(losses, printZkill, printWarnings)
 	sendInteractionResponse(session, interaction, fmt.Sprintf("SRP Totals Per Character\n%s", lossTotals))
 }
 
@@ -325,7 +359,6 @@ func userSrpTotal(session *dg.Session, interaction *dg.InteractionCreate) {
 
 	lossTotals := generateSrpTotalForUser(losses)
 	sendInteractionResponse(session, interaction, lossTotals)
-
 }
 
 func removeDoctrineShip(session *dg.Session, interaction *dg.InteractionCreate) {
@@ -353,17 +386,56 @@ func removeDoctrineShip(session *dg.Session, interaction *dg.InteractionCreate) 
 	}
 }
 
+func setSrpChannel(session *dg.Session, interaction *dg.InteractionCreate) {
+	if !isUserFc(interaction.Member) {
+		sendInteractionResponse(session, interaction, "You are not an FC...")
+		return
+	}
+	config := ServerConfiguration{}
+
+	db.Where("guild_id = ?", interaction.GuildID).First(&config)
+
+	var res *gorm.DB
+
+	if config == (ServerConfiguration{}) {
+		config.GuildId = interaction.GuildID
+		config.SrpChannel = interaction.ChannelID
+		res = db.Create(&config)
+	} else {
+		res = db.Model(&ServerConfiguration{}).Where("guild_id = ?", config.GuildId).Updates(ServerConfiguration{SrpChannel: interaction.ChannelID})
+	}
+
+	if res.Error != nil {
+		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql Query updating Srp channel: %v", res.Error))
+		return
+	}
+
+	SRP_CHANNEL_MAP[interaction.GuildID] = interaction.ChannelID
+
+	sendInteractionResponse(session, interaction, "Srp channel set successfully")
+}
+
 func messageCreate(session *dg.Session, message *dg.MessageCreate) {
 	if message.Author.ID == session.State.User.ID {
+		return
+	}
+
+	srpChannelId := ""
+
+	if arg, ok := SRP_CHANNEL_MAP[message.GuildID]; ok {
+		srpChannelId = arg
+	}
+
+	if srpChannelId != message.ChannelID || srpChannelId == "" {
 		return
 	}
 
 	userName := message.Author.Username
 	member, err := session.GuildMembersSearch(message.GuildID, message.Author.Username, 1)
 	if err != nil {
-		session.ChannelMessageSendReply(message.ChannelID, fmt.Sprintf("Error querying server member: %v", err), message.Reference())
+		session.ChannelMessageSendReply(srpChannelId, fmt.Sprintf("Error querying server member: %v", err), message.Reference())
 	}
 	userIsFc := isUserFc(member[0])
 	result := addKill(userName, message.Content, userIsFc, 0)
-	session.ChannelMessageSendReply(message.ChannelID, result, message.Reference())
+	session.ChannelMessageSendReply(srpChannelId, result, message.Reference())
 }

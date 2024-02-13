@@ -80,12 +80,15 @@ func addKill(userName string, link string, userIsFc bool, customSrp uint64) stri
 	}
 
 	if srp == 0 {
-		warning += "Srp value is zero! Please ask an FC to update this link with an srp amount.\n"
+		warning += "\tSrp value is zero! Please ask an FC to update this link with an srp amount.\n"
+		if shortenedWarning != "" {
+			shortenedWarning += " | "
+		}
 		shortenedWarning += "Zero Srp"
 	}
 
 	if warning != "" {
-		warning = "Warning(s):\n" + warning + "Fc has overriden"
+		warning = "Warning(s):\n" + warning + "Fc has overriden warnings"
 	}
 
 	//Submit the loss to the database, and report the result to the user
@@ -280,11 +283,11 @@ func generateDoctrineShipString(ships []DoctrineShips) string {
 	return shipString
 }
 
-func generateSrpTotalString(losses []Losses) string {
+func generateSrpTotalString(losses []Losses, printZkill bool, printWarnings bool) string {
 
 	type UserLossTotal struct {
 		Total  uint64
-		Losses []string
+		Losses []Losses
 	}
 
 	totalsString := "Loss Totals:\n"
@@ -299,17 +302,23 @@ func generateSrpTotalString(losses []Losses) string {
 			userLoss = UserLossTotal{}
 		}
 		userLoss.Total += loss.Srp
-		userLoss.Losses = append(userLoss.Losses, loss.Url)
+		userLoss.Losses = append(userLoss.Losses, loss)
 
 		lossesMap[loss.UserName] = userLoss
 	}
 
-	for userName, loss := range lossesMap {
-		totalsString += fmt.Sprintf("User: %s\nLosses:\n", userName)
-		for _, link := range loss.Losses {
-			totalsString += fmt.Sprintf("\t %s\n", link)
+	for userName, userLoss := range lossesMap {
+		if !printZkill {
+			continue
 		}
-		totalsString += fmt.Sprintf("Total: %d isk\n\n", loss.Total*1000000)
+		totalsString += fmt.Sprintf("User: %s\nLosses:\n", userName)
+		for _, loss := range userLoss.Losses {
+			totalsString += fmt.Sprintf("\t%s\n", loss.Url)
+			if loss.Warnings != "" && printWarnings {
+				totalsString += fmt.Sprintf("\t\tWarnings: %s\n", loss.Warnings)
+			}
+		}
+		totalsString += fmt.Sprintf("Total: %d isk\n\n", userLoss.Total*1000000)
 	}
 
 	return totalsString

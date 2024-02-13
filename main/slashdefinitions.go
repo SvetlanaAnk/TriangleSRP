@@ -107,17 +107,41 @@ var (
 			},
 		},
 		{
-			Name:        "print-ships",
-			Description: "Print all current doctrine ships and their srp amounts.",
-		},
-		{
-			Name:        "srp-total",
-			Description: "Print srp totals ",
+			Name:        "mark-user-paid",
+			Description: "Mark a user's losses as paid",
 			Options: []*dg.ApplicationCommandOption{
 				{
 					Type:        dg.ApplicationCommandOptionUser,
 					Name:        "user",
-					Description: "Fetch totals for a specific player",
+					Description: "The user whose losses will be marked as paid",
+					Required:    false,
+				},
+			},
+		},
+		{
+			Name:        "print-ships",
+			Description: "Print all current doctrine ships and their srp amounts.",
+		},
+		{
+			Name:        "srp-totals",
+			Description: "Print srp totals ",
+			Options: []*dg.ApplicationCommandOption{
+				{
+					Type:        dg.ApplicationCommandOptionBoolean,
+					Name:        "include-zkill",
+					Description: "Should I include zkill links?",
+					Required:    false,
+				},
+				{
+					Type:        dg.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "Fetch the srp totals for a specific user",
+					Required:    false,
+				},
+				{
+					Type:        dg.ApplicationCommandOptionUser,
+					Name:        "include-warnings",
+					Description: "Should I include loss warnings?",
 					Required:    false,
 				},
 			},
@@ -145,6 +169,10 @@ var (
 					Required:    true,
 				},
 			},
+		},
+		{
+			Name:        "set-channel",
+			Description: "Set the Srp channel the bot should listen to",
 		},
 	}
 )

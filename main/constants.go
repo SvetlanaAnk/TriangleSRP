@@ -9,6 +9,8 @@ const EVE_API_URL string = "https://esi.evetech.net/latest/killmails/%d/%s/?data
 const EVE_TYPE_URL string = "https://esi.evetech.net/latest/universe/types/%d/?datasource=tranquility&language=en"
 const DATABASE_FILE string = "srpmain.sqlite"
 
+var SRP_CHANNEL_MAP = make(map[string]string)
+
 type Loss struct {
 	KillmailId    uint64
 	LocationId    uint64

@@ -28,6 +28,11 @@ type DoctrineShips struct {
 	Srp     uint64 `gorm:"not null"`
 }
 
+type ServerConfiguration struct {
+	GuildId    string `gorm:"primaryKey"`
+	SrpChannel string `gorm:"uniqueIndex"`
+}
+
 func init() {
 	var err error
 
@@ -39,4 +44,11 @@ func init() {
 
 	db.AutoMigrate(&Losses{})
 	db.AutoMigrate(&DoctrineShips{})
+	db.AutoMigrate(&ServerConfiguration{})
+
+	serverConfigurations := []ServerConfiguration{}
+	db.Find(&serverConfigurations)
+	for _, config := range serverConfigurations {
+		SRP_CHANNEL_MAP[config.GuildId] = config.SrpChannel
+	}
 }
