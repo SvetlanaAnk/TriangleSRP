@@ -16,8 +16,10 @@ type Losses struct {
 	UserName string `gorm:"index; not null; size:40"`
 	Paid     bool   `gorm:"default:false"`
 	Batch    uint
-	Srp      uint64 `gorm:"not null; default 1"`
+	Srp      uint64 `gorm:"not null; default 1.0"`
 	ShipId   uint   `gorm:"not null; default 1"`
+	ShipName string `gorm:"default '"`
+	Warnings string `gorm:"default ''"`
 }
 
 type DoctrineShips struct {

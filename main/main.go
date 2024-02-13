@@ -44,7 +44,7 @@ func main() {
 		log.Printf("Logged in as %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
 
-	//dg_session.AddHandler(messageCreate)
+	dg_session.AddHandler(messageCreate)
 	dg_session.Identify.Intents = dg.IntentsGuildMessages
 
 	err := dg_session.Open()

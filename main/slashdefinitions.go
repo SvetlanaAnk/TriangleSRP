@@ -110,5 +110,41 @@ var (
 			Name:        "print-ships",
 			Description: "Print all current doctrine ships and their srp amounts.",
 		},
+		{
+			Name:        "srp-total",
+			Description: "Print srp totals ",
+			Options: []*dg.ApplicationCommandOption{
+				{
+					Type:        dg.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "Fetch totals for a specific player",
+					Required:    false,
+				},
+			},
+		},
+		{
+			Name:        "user-srp-total",
+			Description: "Get the losses and srp total for a user",
+			Options: []*dg.ApplicationCommandOption{
+				{
+					Type:        dg.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "Fetch totals for a specific player",
+					Required:    false,
+				},
+			},
+		},
+		{
+			Name:        "remove-ship",
+			Description: "Remove a doctrine ship",
+			Options: []*dg.ApplicationCommandOption{
+				{
+					Type:        dg.ApplicationCommandOptionInteger,
+					Name:        "ship-id",
+					Description: "The ship id. Check the ship's zkill page url for this id",
+					Required:    true,
+				},
+			},
+		},
 	}
 )

@@ -10,11 +10,19 @@ const EVE_TYPE_URL string = "https://esi.evetech.net/latest/universe/types/%d/?d
 const DATABASE_FILE string = "srpmain.sqlite"
 
 type Loss struct {
-	KillmailId uint64   `json:"killmail_id"`
-	Data       LossData `json:"zkb"`
+	KillmailId    uint64
+	LocationId    uint64
+	Hash          string
+	TotalValue    float32
+	SolarSystemId uint32
+	ShipTypeId    uint32
+}
+type ZkillLoss struct {
+	KillmailId uint64        `json:"killmail_id"`
+	Data       ZkillLossData `json:"zkb"`
 }
 
-type LossData struct {
+type ZkillLossData struct {
 	LocationId uint64  `json:"locationID"`
 	Hash       string  `json:"hash"`
 	TotalValue float32 `json:"totalValue"`
@@ -61,4 +69,15 @@ var PochvenSystems []uint32 = []uint32{
 	30005029,
 	30020141,
 	30045329,
+}
+
+var interdictorShipIds []uint32 = []uint32{
+	22464, // Flycatcher
+	22456, // Sabre
+	22460, // Eris
+	22452, // Heretic
+	37482, // Stork
+	37481, // Pontifex
+	37483, // Magus
+	37480, // Bifrost
 }
