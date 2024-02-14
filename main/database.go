@@ -39,6 +39,11 @@ type Administrators struct {
 	IsSuperAdmin bool `gorm:"default: false"`
 }
 
+type Ships struct {
+	Ship_ID uint   `gorm:"primaryKey"`
+	Name    string `gorm:"default:''"`
+}
+
 func init() {
 	var err error
 
@@ -52,6 +57,8 @@ func init() {
 	db.AutoMigrate(&DoctrineShips{})
 	db.AutoMigrate(&ServerConfiguration{})
 	db.AutoMigrate(&Administrators{})
+	db.AutoMigrate(&Ships{})
+
 	serverConfigurations := []ServerConfiguration{}
 	db.Find(&serverConfigurations)
 	for _, config := range serverConfigurations {

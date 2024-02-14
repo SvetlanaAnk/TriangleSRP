@@ -233,8 +233,9 @@ func isPochvenSystem(systemId uint32) bool {
 }
 
 func getShipNameFromId(shipId uint) string {
-	doctrineShip := *getDoctrineShip(shipId)
-	if doctrineShip != (DoctrineShips{}) {
+	doctrineShip := Ships{}
+	db.Where("ship_id = ?", shipId).First(&doctrineShip)
+	if doctrineShip != (Ships{}) {
 		return doctrineShip.Name
 	}
 
@@ -261,6 +262,7 @@ func getShipNameFromId(shipId uint) string {
 		log.Printf("Eve JSON Unmarshal Error: %v", err)
 		return ""
 	}
+	db.Create(&Ships{Ship_ID: shipId, Name: ship.Name})
 	return ship.Name
 }
 
