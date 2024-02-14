@@ -22,7 +22,7 @@ func sendInteractionResponse(session *dg.Session, interaction *dg.InteractionCre
 	})
 }
 
-func addKill(userName string, link string, userIsFc bool, customSrp uint64) string {
+func addKill(nickName string, userID string, link string, userIsFc bool, customSrp uint64) string {
 	warning := ""
 	shortenedWarning := ""
 	srp := uint64(1)
@@ -92,14 +92,14 @@ func addKill(userName string, link string, userIsFc bool, customSrp uint64) stri
 	}
 
 	//Submit the loss to the database, and report the result to the user
-	loss = Losses{UserName: userName, Url: parsedLink, Srp: srp, ShipId: uint(eveLossData.ShipTypeId), ShipName: ship.Name, Warnings: shortenedWarning}
+	loss = Losses{NickName: nickName, UserId: userID, Url: parsedLink, Srp: srp, ShipId: uint(eveLossData.ShipTypeId), ShipName: ship.Name, Warnings: shortenedWarning}
 
 	creationResult := db.Create(&loss)
 
 	if creationResult.Error != nil {
 		return fmt.Sprintf("SQL Error submitting Link. %v", link)
 	} else {
-		return fmt.Sprintf("Submitted successfully\nLoss: %s\nAmount: %v million isk\nCapsuleer: %v\n%s", link, srp, userName, warning)
+		return fmt.Sprintf("Submitted successfully\nLoss: %s\nAmount: %v million isk\nCapsuleer: %v\n%s", link, srp, nickName, warning)
 	}
 }
 
@@ -218,13 +218,9 @@ func getDoctrineShip(shipId uint) *DoctrineShips {
 	return &ship
 }
 
-func isUserFc(member *dg.Member) bool {
-	for _, role := range member.Roles {
-		if role == "FC" {
-			return true
-		}
-	}
-	return member.User.Username == "theblob8584"
+func isUserFc(member *dg.User) bool {
+	res := db.Where("user_id = ?", member.ID).First(&Administrators{})
+	return res.Error == nil
 }
 
 func isPochvenSystem(systemId uint32) bool {
@@ -295,7 +291,7 @@ func generateSrpTotalString(losses []Losses, printZkill bool, printWarnings bool
 
 	for _, loss := range losses {
 		var userLoss UserLossTotal
-		if val, ok := lossesMap[loss.UserName]; ok {
+		if val, ok := lossesMap[loss.NickName]; ok {
 			userLoss = val
 		} else {
 			userLoss = UserLossTotal{}
@@ -303,14 +299,14 @@ func generateSrpTotalString(losses []Losses, printZkill bool, printWarnings bool
 		userLoss.Total += loss.Srp
 		userLoss.Losses = append(userLoss.Losses, loss)
 
-		lossesMap[loss.UserName] = userLoss
+		lossesMap[loss.NickName] = userLoss
 	}
 
-	for userName, userLoss := range lossesMap {
+	for nickName, userLoss := range lossesMap {
 		if !printZkill {
 			continue
 		}
-		totalsString += fmt.Sprintf("User: %s\nLosses:\n", userName)
+		totalsString += fmt.Sprintf("User: %s\nLosses:\n", nickName)
 		for _, loss := range userLoss.Losses {
 			totalsString += fmt.Sprintf("\t%s\n", loss.Url)
 			if loss.Warnings != "" && printWarnings {
@@ -325,14 +321,13 @@ func generateSrpTotalString(losses []Losses, printZkill bool, printWarnings bool
 
 func generateSrpTotalForUser(losses []Losses) string {
 	srpTotal := uint64(0)
-	totalString := fmt.Sprintf("Losses|SRP for User: %s\n", losses[0].UserName)
+	totalString := fmt.Sprintf("Losses|SRP for User: %s\n", losses[0].NickName)
 
 	for _, loss := range losses {
 		totalString += fmt.Sprintf("\tShip: %s Srp: %d Million Isk\n\t\tZkill: %s\n", loss.ShipName, loss.Srp, loss.Url)
 		if loss.Warnings != "" {
 			totalString += fmt.Sprintf("\t\t%s", loss.Warnings)
 		}
-
 		srpTotal += loss.Srp
 	}
 
@@ -349,4 +344,15 @@ func getDoctrineShipSrp(ship *DoctrineShips, eveLossData *Loss) uint64 {
 		}
 	}
 	return ship.Srp
+}
+
+func getNicknameFromUser(session *dg.Session, user *dg.User) string {
+	if user.Bot {
+		return user.Username
+	}
+	member, err := session.GuildMember(GUILD_ID, user.ID)
+	if err != nil || member.Nick == "" {
+		return user.Username
+	}
+	return member.Nick
 }

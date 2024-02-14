@@ -174,5 +174,17 @@ var (
 			Name:        "set-channel",
 			Description: "Set the Srp channel the bot should listen to",
 		},
+		{
+			Name:        "add-fc",
+			Description: "Add a fleet commander",
+			Options: []*dg.ApplicationCommandOption{
+				{
+					Type:        dg.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user who will become recognized as an fc",
+					Required:    true,
+				},
+			},
+		},
 	}
 )
