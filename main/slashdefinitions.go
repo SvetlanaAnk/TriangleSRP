@@ -186,5 +186,9 @@ var (
 				},
 			},
 		},
+		{
+			Name:        "srp-paid",
+			Description: "Mark all losses as paid",
+		},
 	}
 )

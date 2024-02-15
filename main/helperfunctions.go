@@ -22,6 +22,26 @@ func sendInteractionResponse(session *dg.Session, interaction *dg.InteractionCre
 	})
 }
 
+func sendSimpleEmbedResponse(session *dg.Session, interaction *dg.InteractionCreate, message string, title string) {
+	embed := []*dg.MessageEmbed{
+		{
+			Title: title,
+			Fields: []*dg.MessageEmbedField{
+				{
+					Value: message,
+				},
+			},
+		},
+	}
+
+	session.InteractionRespond(interaction.Interaction, &dg.InteractionResponse{
+		Type: dg.InteractionResponseChannelMessageWithSource,
+		Data: &dg.InteractionResponseData{
+			Embeds: embed,
+		},
+	})
+}
+
 func addKill(nickName string, userID string, link string, userIsFc bool, customSrp uint64) string {
 	warning := ""
 	shortenedWarning := ""
@@ -284,24 +304,22 @@ func generateSrpTotalString(losses []Losses, printZkill bool, printWarnings bool
 
 	type UserLossTotal struct {
 		Total  uint64
-		Losses []Losses
+		Losses []*Losses
 	}
 
 	totalsString := "Loss Totals:\n"
 
-	lossesMap := make(map[string]UserLossTotal)
+	lossesMap := make(map[string]*UserLossTotal)
 
 	for _, loss := range losses {
-		var userLoss UserLossTotal
-		if val, ok := lossesMap[loss.NickName]; ok {
-			userLoss = val
+		if opt, ok := lossesMap[loss.NickName]; ok {
+			userLoss := opt
+			userLoss.Losses = append(opt.Losses, &loss)
+			userLoss.Total += loss.Srp
+			lossesMap[loss.NickName] = userLoss
 		} else {
-			userLoss = UserLossTotal{}
+			lossesMap[loss.NickName] = &UserLossTotal{Total: loss.Srp, Losses: []*Losses{&loss}}
 		}
-		userLoss.Total += loss.Srp
-		userLoss.Losses = append(userLoss.Losses, loss)
-
-		lossesMap[loss.NickName] = userLoss
 	}
 
 	for nickName, userLoss := range lossesMap {

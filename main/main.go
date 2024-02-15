@@ -23,20 +23,15 @@ func init() {
 	if err != nil {
 		log.Fatalf("Invalid bot paramters: %v", err)
 	}
+}
 
+func init() {
 	dg_session.AddHandler(func(s *dg.Session, i *dg.InteractionCreate) {
 		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 			h(s, i)
 		}
 	})
-}
-
-func registerCommand(command *dg.ApplicationCommand, channel chan *dg.ApplicationCommand) {
-	cmd, err := dg_session.ApplicationCommandCreate(dg_session.State.User.ID, GUILD_ID, command)
-	if err != nil {
-		log.Panicf("Cannot create '%v' command %v", command.Name, err)
-	}
-	channel <- cmd
+	dg_session.AddHandler(messageCreate)
 }
 
 func main() {
@@ -44,7 +39,6 @@ func main() {
 		log.Printf("Logged in as %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
 
-	dg_session.AddHandler(messageCreate)
 	dg_session.Identify.Intents = dg.IntentsGuildMessages
 
 	err := dg_session.Open()
@@ -55,15 +49,17 @@ func main() {
 
 	log.Println("Adding commands...")
 
-	registeredCommands := make([]*dg.ApplicationCommand, len(commands))
-	channel := make(chan *dg.ApplicationCommand)
-	for _, command := range commands {
-		go registerCommand(command, channel)
-	}
+	//registeredCommands := make([]*dg.ApplicationCommand, len(commands))
 
-	for i := range commands {
-		registeredCommands[i] = <-channel
-	}
+	//dg_session.ApplicationCommandBulkOverwrite("1205737918556147722", GUILD_ID, commands)
+	log.Println("Commands Added")
+	// for i, v := range commands {
+	// 	cmd, err := dg_session.ApplicationCommand(dg_session.State.User.ID, GUILD_ID, v)
+	// 	if err != nil {
+	// 		log.Panicf("Cannot create '%v' command: %v", v.Name, err)
+	// 	}
+	// 	registeredCommands[i] = cmd
+	// }
 
 	defer dg_session.Close()
 
@@ -72,14 +68,14 @@ func main() {
 	log.Println("Press CTRL+C to exit")
 	<-stop
 
-	log.Println("Removing Commands...")
+	//log.Println("Removing Commands...")
 
-	for _, v := range registeredCommands {
-		err := dg_session.ApplicationCommandDelete(dg_session.State.User.ID, GUILD_ID, v.ID)
-		if err != nil {
-			log.Panicf("Cannot delete '%v' command :%v", v.Name, err)
-		}
-	}
+	// for _, v := range registeredCommands {
+	// 	err := dg_session.ApplicationCommandDelete(dg_session.State.User.ID, GUILD_ID, v.ID)
+	// 	if err != nil {
+	// 		log.Panicf("Cannot delete '%v' command :%v", v.Name, err)
+	// 	}
+	// }
 
 	log.Println("Shutting Down")
 }

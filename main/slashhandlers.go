@@ -17,12 +17,12 @@ var (
 		"srp-paid":       srpPaid,
 		"paid":           paid,
 		"print-ships":    printShips,
-		"srp-totals":     srpTotals,
 		"user-srp-total": userSrpTotal,
 		"remove-ship":    removeDoctrineShip,
 		"set-channel":    setSrpChannel,
 		"mark-user-paid": markUserPaid,
 		"add-fc":         addFc,
+		"srp-totals":     srpTotals,
 	}
 )
 
@@ -41,10 +41,10 @@ func addLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 		userId = user.ID
 
 		if nickName == session.State.User.Username {
-			sendInteractionResponse(session, interaction, "While I am flattered, I cannot receive Srp since I am a bot.\nPlease select a capsuleer, or at least a fellow bot in Fraternity.")
+			sendSimpleEmbedResponse(session, interaction, "Nice Try", "While I am flattered, I cannot receive Srp since I am a bot.\nPlease select a capsuleer, or at least a fellow bot in Fraternity")
 		}
 		if opt.UserValue(session).Bot {
-			sendInteractionResponse(session, interaction, "My fellow bots cannot receive Srp.\nPlease select a capsuleer, or at least a Fraternity member.")
+			sendSimpleEmbedResponse(session, interaction, "Nice try", "My fellow bots cannot receive Srp")
 		}
 	} else {
 		nickName = getNicknameFromUser(session, interaction.Member.User)
@@ -58,7 +58,7 @@ func addLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	if opt, ok := options["srp"]; ok {
 		customSrp = uint64(opt.IntValue())
 		if !userIsFc {
-			sendInteractionResponse(session, interaction, "Only an FC can specify a custom Srp amount.")
+			sendSimpleEmbedResponse(session, interaction, "You cannot do that", "Only an FC can specify a custom Srp amount")
 		}
 	}
 
@@ -68,7 +68,7 @@ func addLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func setShipSrp(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 	optionMap := *generateOptionMap(interaction)
@@ -85,10 +85,10 @@ func setShipSrp(session *dg.Session, interaction *dg.InteractionCreate) {
 	if ship != (DoctrineShips{}) {
 		result := db.Model(&DoctrineShips{}).Where("ship_id = ?", shipID).Update("srp", srp)
 		if result.Error == nil && result.RowsAffected == 1 {
-			sendInteractionResponse(session, interaction, fmt.Sprintf("Doctrine Ship: %s Id: %d was already present. Srp value has been updated to %d million Isk", ship.Name, shipID, srp))
+			sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Doctrine Ship: %s Id: %d was already present\nSrp value updated to %d million Isk", ship.Name, shipID, srp), "Srp Updated")
 			return
 		} else {
-			sendInteractionResponse(session, interaction, fmt.Sprintf("Sql Error Updating Ship: %v", result.Error))
+			sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql Error Updating Ship: %v", result.Error), "Sql Error")
 			return
 		}
 	}
@@ -96,16 +96,16 @@ func setShipSrp(session *dg.Session, interaction *dg.InteractionCreate) {
 	shipName := getShipNameFromId(uint(shipID))
 
 	if shipName == "" {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("ShipId: %d not valid", shipID))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Ship Id: %d not valid", shipID), "Invalid Id")
 		return
 	}
 	ship = DoctrineShips{Ship_ID: shipID, Name: shipName, Srp: srp}
 	creationResult := db.Create(&ship)
 
 	if creationResult.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error creating ship %v : %v\n%v", ship.Ship_ID, ship.Name, creationResult.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("SQL Error creating ship %v : %s\n%v", ship.Ship_ID, ship.Name, creationResult.Error), "Sql Error")
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Doctrine ship %s ID: %d added with an SRP value of %d million Isk", ship.Name, shipID, srp))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Doctrine Ship %s ID: %d submitted\nSRP value: %d million Isk", ship.Name, shipID, srp), "Doctrine Ship Submitted")
 	}
 }
 
@@ -120,33 +120,33 @@ func removeLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	parsedLink := regexMatchZkill(strings.ToLower(link))
 
 	if parsedLink == "" {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Invalid Zkill format. %v", link))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Invalid Zkill format: %v", link), "Invalid Link")
 		return
 	}
 
 	loss := *getLossFromLink(parsedLink)
 	if loss == (Losses{}) {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss not found\n%v", link))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Loss not found: %v", link), "Not Found")
 		return
 	}
 
 	if !isUserFc(interaction.Member.User) && loss.UserId != interaction.Member.User.ID {
-		sendInteractionResponse(session, interaction, "Only an FC can delete someone else's loss.")
+		sendSimpleEmbedResponse(session, interaction, "Only an FC can delete someone else's loss.", "Permission Denied")
 		return
 	}
 
 	result := db.Where("url = ?", parsedLink).Delete(&loss)
 
 	if result.Error == nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss has been removed\n%v", link))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Loss has been removed: %v", link), "Loss Removed")
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error removing loss: %v\n%v", link, result.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("SQL Error removing loss: %s\n%v", link, result.Error), "Sql Error")
 	}
 }
 
 func updateLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 
@@ -165,13 +165,13 @@ func updateLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	parsedLink := regexMatchZkill(strings.ToLower(link))
 
 	if parsedLink == "" {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Invalid Zkill format. %v", link))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Invalid Zkill format: %v", link), "Invalid Lossmail")
 		return
 	}
 
 	loss := *getLossFromLink(parsedLink)
 	if loss == (Losses{}) {
-		sendInteractionResponse(session, interaction, "Loss not found.")
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Loss not found: %s", link), "Not Found")
 		return
 	}
 
@@ -181,11 +181,11 @@ func updateLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	if opt, ok := optionMap["user"]; ok {
 		nickName = getNicknameFromUser(session, opt.UserValue(session))
 		if nickName == session.State.User.Username {
-			sendInteractionResponse(session, interaction, "While I am flattered, I cannot receive Srp since I am a bot.\nPlease select a capsuleer, or at least a fellow bot in Fraternity.")
+			sendSimpleEmbedResponse(session, interaction, "While I am flattered, I cannot receive Srp since I am a bot\nPlease select a capsuleer", "Nice try")
 			return
 		}
 		if opt.UserValue(session).Bot {
-			sendInteractionResponse(session, interaction, "My fellow bots cannot receive Srp.\nPlease select a capsuleer, or at least a Fraternity member.")
+			sendSimpleEmbedResponse(session, interaction, "My fellow bots cannot receive Srp\nPlease select a capsuleer", "Nice try")
 			return
 		}
 	}
@@ -197,15 +197,15 @@ func updateLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	result := db.Model(&Losses{}).Where("url = ?", parsedLink).Updates(Losses{Srp: srp, Paid: paid, NickName: nickName})
 
 	if result.Error == nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss of: %v\nHas been updated\nSrp: %v million isk\nPaid: %v\nCapsuleer: %v", link, srp, paid, nickName))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Loss of: %v\nHas been updated\nSrp: %v million isk\nPaid: %v\nCapsuleer: %v", link, srp, paid, nickName), "Loss Updated")
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error removing loss: %v\n%v", link, result.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("SQL Error removing loss: %s\n%v", link, result.Error), "Sql Error")
 	}
 }
 
 func srpPaid(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 	batchId := uint(0)
@@ -216,15 +216,15 @@ func srpPaid(session *dg.Session, interaction *dg.InteractionCreate) {
 
 	result := db.Model(&Losses{}).Where("paid = ?", false).Updates(&Losses{Paid: true, Batch: batchId})
 	if result.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql error closing backlog: %v", result.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql error closing backlog: %v", result.Error), "Sql Error")
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Srp has been marked as paid\nLosses marked as paid: %d\nBatch Id: %d\nPlease save this batch id in case you need to reverse this action", result.RowsAffected, batchId))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Srp has been marked as paid\nLosses marked as paid: %d\nBatch Id: %d", result.RowsAffected, batchId), "Srp Paid!")
 	}
 }
 
 func paid(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 
@@ -238,27 +238,27 @@ func paid(session *dg.Session, interaction *dg.InteractionCreate) {
 	parsedLink := regexMatchZkill(strings.ToLower(link))
 
 	if parsedLink == "" {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Invalid Zkill format. %v", link))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Invalid Zkill format: %s", link), "Invalid Lossmail")
 		return
 	}
 
 	loss := *getLossFromLink(parsedLink)
 	if loss == (Losses{}) {
-		sendInteractionResponse(session, interaction, "Loss not found.")
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Loss not found: %v", link), "Not Found")
 		return
 	}
 
 	result := db.Model(&Losses{}).Where("url = ?", parsedLink).Update("paid", true)
 	if result.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql error: %v", result.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql error: %v", result.Error), "Sql Error")
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Loss has been marked as paid\n%s", link))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Loss has been marked as paid: %s", link), "Loss Paid!")
 	}
 }
 
 func markUserPaid(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 
@@ -266,15 +266,15 @@ func markUserPaid(session *dg.Session, interaction *dg.InteractionCreate) {
 	var nickName string
 	var user *dg.User
 	if opt, ok := optionMap["user"]; ok {
-		user := opt.UserValue(session)
+		user = opt.UserValue(session)
 		nickName = getNicknameFromUser(session, user)
 	}
 
 	res := db.Model(&Losses{}).Where("user_id = ?", user.ID).Update("paid", true)
 	if res.RowsAffected == 0 {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("No losses found for user: %s", nickName))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("No losses found for user: %s", nickName), "None Found")
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Member: %s's losses have been marked as paid.\nNumber paid: %d", nickName, res.RowsAffected))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Member: %s's losses have been marked as paid.\nNumber paid: %d", nickName, res.RowsAffected), "Srp Paid")
 	}
 }
 
@@ -283,66 +283,63 @@ func printShips(session *dg.Session, interaction *dg.InteractionCreate) {
 
 	result := db.Find(&ships)
 	if result.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql error querying ships: %v", result.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql error querying ships: %v", result.Error), "Sql Error")
 	} else {
 		shipString := generateDoctrineShipString(ships)
 		if shipString == "" {
-			shipString = "There are currently no registered doctrine ships"
+			sendSimpleEmbedResponse(session, interaction, "There are no registered doctrine ships", "No Ships found!")
+		} else {
+			sendSimpleEmbedResponse(session, interaction, shipString, "Doctrine Ships")
 		}
-		sendInteractionResponse(session, interaction, shipString)
 	}
 }
 
 func srpTotals(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an FC...")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 	optionMap := *generateOptionMap(interaction)
-	var nickName string
-	var user *dg.User
+	var user *dg.User = nil
 
 	if opt, ok := optionMap["user"]; ok {
-		user := opt.UserValue(session)
-		nickName = getNicknameFromUser(session, user)
+		user = opt.UserValue(session)
 	}
 
 	var losses []Losses
 
 	var result *gorm.DB
 
-	if nickName == "" {
+	if user == nil {
 		result = db.Where("paid = ?", false).Find(&losses)
 	} else {
 		result = db.Where("user_id = ? AND paid = ?", user.ID, false).Find(&losses)
 	}
-
 	if result.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error while querying losses: %v", result.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("SQL Error while querying losses: %v", result.Error), "Sql Error")
 		return
 	}
 	if len(losses) == 0 {
-		sendInteractionResponse(session, interaction, "No unpaid losses found.")
+		sendSimpleEmbedResponse(session, interaction, "No unpaid losses found", "None Found")
 		return
 	}
 
-	printZkill := false
+	printZkill := true
 	if opt, ok := optionMap["include-zkill"]; ok {
 		printZkill = opt.BoolValue()
 	}
 
-	printWarnings := false
+	printWarnings := true
 	if opt, ok := optionMap["include-errors"]; ok {
 		printWarnings = opt.BoolValue()
 	}
-
 	lossTotals := generateSrpTotalString(losses, printZkill, printWarnings)
 	sendInteractionResponse(session, interaction, fmt.Sprintf("SRP Totals Per Character\n%s", lossTotals))
 }
 
 func userSrpTotal(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an FC...")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 
@@ -358,11 +355,11 @@ func userSrpTotal(session *dg.Session, interaction *dg.InteractionCreate) {
 	var losses []Losses
 	result := db.Where("user_id = ? AND paid = ?", user.ID, false).Find(&losses)
 	if result.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("SQL Error while querying losses: %v", result.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("SQL Error while querying losses: %v", result.Error), "Sql Error")
 		return
 	}
 	if len(losses) == 0 {
-		sendInteractionResponse(session, interaction, "No unpaid losses found.")
+		sendSimpleEmbedResponse(session, interaction, "No unpaid losses found", "None Found")
 		return
 	}
 
@@ -372,7 +369,7 @@ func userSrpTotal(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func removeDoctrineShip(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an FC...")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 
@@ -389,15 +386,15 @@ func removeDoctrineShip(session *dg.Session, interaction *dg.InteractionCreate) 
 	result := db.Delete(&ship)
 
 	if result.Error == nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Ship %s ID: %d removed from doctrine ships", ship.Name, ship.Ship_ID))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Ship %s ID: %d removed from doctrine ships", ship.Name, ship.Ship_ID), "Ship Removed")
 	} else {
-		sendInteractionResponse(session, interaction, "ShipId not found:")
+		sendSimpleEmbedResponse(session, interaction, "ShipId not found:", "Not Found")
 	}
 }
 
 func setSrpChannel(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an FC...")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 	config := ServerConfiguration{}
@@ -415,18 +412,18 @@ func setSrpChannel(session *dg.Session, interaction *dg.InteractionCreate) {
 	}
 
 	if res.Error != nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql Query updating Srp channel: %v", res.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql Query updating Srp channel: %v", res.Error), "Sql Error")
 		return
 	}
 
 	SRP_CHANNEL_MAP[interaction.GuildID] = interaction.ChannelID
 
-	sendInteractionResponse(session, interaction, "Srp channel set successfully")
+	sendSimpleEmbedResponse(session, interaction, "Srp channel set successfully", "Channel Set")
 }
 
 func addFc(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendInteractionResponse(session, interaction, "You are not an Fc...")
+		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
 		return
 	}
 	options := *generateOptionMap(interaction)
@@ -437,16 +434,16 @@ func addFc(session *dg.Session, interaction *dg.InteractionCreate) {
 	}
 
 	if isUserFc(user) {
-		sendInteractionResponse(session, interaction, "User is already an fc.")
+		sendSimpleEmbedResponse(session, interaction, "User is already an fc", "Unecessary")
 		return
 	}
 	admin := Administrators{UserId: user.ID, UserName: user.Username, IsSuperAdmin: false}
 	res := db.Create(&admin)
 
 	if res.Error == nil {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("User: %s is now an Fc", admin.UserName))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("User: %s is now an Fc", admin.UserName), "Fc Registered")
 	} else {
-		sendInteractionResponse(session, interaction, fmt.Sprintf("Sql Error adding fc: %v", res.Error))
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql Error adding fc: %v", res.Error), "Sql Error")
 	}
 }
 
