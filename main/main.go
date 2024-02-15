@@ -56,17 +56,10 @@ func main() {
 
 	registeredCommands := make([]*dg.ApplicationCommand, len(commands))
 	if *REGISTER_COMMANDS {
-		log.Println("Adding commands...")
+		log.Println("Adding Commands...")
 		registeredCommands, _ = dg_session.ApplicationCommandBulkOverwrite("1205737918556147722", GUILD_ID, commands)
 		log.Println("Commands Added")
 	}
-	// for i, v := range commands {
-	// 	cmd, err := dg_session.ApplicationCommand(dg_session.State.User.ID, GUILD_ID, v)
-	// 	if err != nil {
-	// 		log.Panicf("Cannot create '%v' command: %v", v.Name, err)
-	// 	}
-	// 	registeredCommands[i] = cmd
-	// }
 
 	defer dg_session.Close()
 
@@ -81,7 +74,7 @@ func main() {
 		for _, v := range registeredCommands {
 			err := dg_session.ApplicationCommandDelete(dg_session.State.User.ID, GUILD_ID, v.ID)
 			if err != nil {
-				log.Panicf("Cannot delete '%v' command :%v", v.Name, err)
+				log.Panicf("Cannot delete '%v' Command. Error: %v", v.Name, err)
 			}
 		}
 	}
