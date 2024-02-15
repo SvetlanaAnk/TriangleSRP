@@ -18,6 +18,10 @@ var (
 )
 
 func init() {
+	flag.Parse()
+}
+
+func init() {
 	DISCORD_TOKEN = os.Getenv("DISCORD_TOKEN")
 	GUILD_ID = os.Getenv("GUILD_ID")
 

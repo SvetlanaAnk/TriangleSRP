@@ -467,7 +467,7 @@ func removeFc(session *dg.Session, interaction *dg.InteractionCreate) {
 	res := db.Delete(&admin)
 
 	if res.Error == nil {
-		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("User: %s is no longer an Fc", admin.UserName), "Fc Removed")
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("User: %s is no longer an Fc", user.Username), "Fc Removed")
 	} else {
 		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql Error removing fc: %v", res.Error), "Sql Error")
 	}
@@ -485,11 +485,11 @@ func rollBackBatch(session *dg.Session, interaction *dg.InteractionCreate) {
 		batchId = opt.IntValue()
 	}
 
-	result := db.Model(&Losses{}).Where("batch = ?", batchId).Updates(&Losses{Paid: false})
+	result := db.Model(&Losses{}).Where("batch = ?", batchId).Update("paid", false).Update("batch", 0)
 	if result.Error != nil {
 		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql error closing backlog: %v", result.Error), "Sql Error")
 	} else {
-		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Srp has been marked as paid\nLosses marked as paid: %d\nBatch Id: %d", result.RowsAffected, batchId), "Srp Paid!")
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Losses with Batch Id: %d, rolled back\nLosses Affected: %d\nBatch Id: %d Has been removed", batchId, result.RowsAffected, batchId), "Batch Rolled Back")
 	}
 }
 
