@@ -68,4 +68,8 @@ func init() {
 	if res.Error != nil {
 		db.Create(&Administrators{UserId: "1064094675310477353", UserName: "theblob8584", IsSuperAdmin: true})
 	}
+	res = db.Where("user_id = ?", "416767410788630558").First(&Administrators{})
+	if res.Error != nil {
+		db.Create(&Administrators{UserId: "416767410788630558", UserName: "jinxdecaire", IsSuperAdmin: true})
+	}
 }

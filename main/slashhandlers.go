@@ -23,6 +23,8 @@ var (
 		"mark-user-paid": markUserPaid,
 		"add-fc":         addFc,
 		"srp-totals":     srpTotals,
+		"rollback-batch": rollBackBatch,
+		"remove-fc":      removeFc,
 	}
 )
 
@@ -68,7 +70,7 @@ func addLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func setShipSrp(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 	optionMap := *generateOptionMap(interaction)
@@ -146,7 +148,7 @@ func removeLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func updateLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 
@@ -205,7 +207,7 @@ func updateLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func srpPaid(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 	batchId := uint(0)
@@ -224,7 +226,7 @@ func srpPaid(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func paid(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 
@@ -258,7 +260,7 @@ func paid(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func markUserPaid(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 
@@ -296,7 +298,7 @@ func printShips(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func srpTotals(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 	optionMap := *generateOptionMap(interaction)
@@ -334,12 +336,12 @@ func srpTotals(session *dg.Session, interaction *dg.InteractionCreate) {
 		printWarnings = opt.BoolValue()
 	}
 	lossTotals := generateSrpTotalString(losses, printZkill, printWarnings)
-	sendInteractionResponse(session, interaction, fmt.Sprintf("SRP Totals Per Character\n%s", lossTotals))
+	sendSimpleEmbedResponse(session, interaction, lossTotals, "Srp Totals Per Character")
 }
 
 func userSrpTotal(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 
@@ -369,7 +371,7 @@ func userSrpTotal(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func removeDoctrineShip(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 
@@ -394,7 +396,7 @@ func removeDoctrineShip(session *dg.Session, interaction *dg.InteractionCreate) 
 
 func setSrpChannel(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 	config := ServerConfiguration{}
@@ -423,12 +425,11 @@ func setSrpChannel(session *dg.Session, interaction *dg.InteractionCreate) {
 
 func addFc(session *dg.Session, interaction *dg.InteractionCreate) {
 	if !isUserFc(interaction.Member.User) {
-		sendSimpleEmbedResponse(session, interaction, "Permission Denied", "You are not an FC..")
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
 		return
 	}
 	options := *generateOptionMap(interaction)
 	var user *dg.User
-	// If a custom user was selected to receive srp, use that instead
 	if opt, ok := options["user"]; ok {
 		user = opt.UserValue(session)
 	}
@@ -444,6 +445,51 @@ func addFc(session *dg.Session, interaction *dg.InteractionCreate) {
 		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("User: %s is now an Fc", admin.UserName), "Fc Registered")
 	} else {
 		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql Error adding fc: %v", res.Error), "Sql Error")
+	}
+}
+
+func removeFc(session *dg.Session, interaction *dg.InteractionCreate) {
+	if !isUserSuperAdmin(interaction.Member.User) {
+		sendSimpleEmbedResponse(session, interaction, "Only an administrator may remove an Fc", "Permission Denied")
+		return
+	}
+	options := *generateOptionMap(interaction)
+	var user *dg.User
+	if opt, ok := options["user"]; ok {
+		user = opt.UserValue(session)
+	}
+
+	if !isUserFc(user) {
+		sendSimpleEmbedResponse(session, interaction, "User is not an fc", "Unecessary")
+		return
+	}
+	admin := Administrators{UserId: user.ID}
+	res := db.Delete(&admin)
+
+	if res.Error == nil {
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("User: %s is no longer an Fc", admin.UserName), "Fc Removed")
+	} else {
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql Error removing fc: %v", res.Error), "Sql Error")
+	}
+}
+
+func rollBackBatch(session *dg.Session, interaction *dg.InteractionCreate) {
+	if !isUserFc(interaction.Member.User) {
+		sendSimpleEmbedResponse(session, interaction, "You are not an FC..", "Permission Denied")
+		return
+	}
+
+	options := *generateOptionMap(interaction)
+	batchId := int64(-1)
+	if opt, ok := options["batch-id"]; ok {
+		batchId = opt.IntValue()
+	}
+
+	result := db.Model(&Losses{}).Where("batch = ?", batchId).Updates(&Losses{Paid: false})
+	if result.Error != nil {
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Sql error closing backlog: %v", result.Error), "Sql Error")
+	} else {
+		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Srp has been marked as paid\nLosses marked as paid: %d\nBatch Id: %d", result.RowsAffected, batchId), "Srp Paid!")
 	}
 }
 

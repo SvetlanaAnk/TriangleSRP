@@ -187,8 +187,32 @@ var (
 			},
 		},
 		{
+			Name:        "remove-fc",
+			Description: "Remove a fleet commander",
+			Options: []*dg.ApplicationCommandOption{
+				{
+					Type:        dg.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The Fc who will be removed",
+					Required:    true,
+				},
+			},
+		},
+		{
 			Name:        "srp-paid",
 			Description: "Mark all losses as paid",
+		},
+		{
+			Name:        "rollback-batch",
+			Description: "Marks all losses with a batch id as unpaid",
+			Options: []*dg.ApplicationCommandOption{
+				{
+					Type:        dg.ApplicationCommandOptionInteger,
+					Name:        "batch-id",
+					Description: "The batch-id to rollback",
+					Required:    true,
+				},
+			},
 		},
 	}
 )

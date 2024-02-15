@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -9,9 +10,11 @@ import (
 )
 
 var (
-	DISCORD_TOKEN string
-	GUILD_ID      string
-	dg_session    *dg.Session
+	DISCORD_TOKEN     string
+	GUILD_ID          string
+	dg_session        *dg.Session
+	REGISTER_COMMANDS = flag.Bool("Register Commands", false, "Should commands be registered?")
+	REMOVE_COMMANDS   = flag.Bool("Remove Commands", false, "Remove all commands on shutdown.")
 )
 
 func init() {
@@ -47,12 +50,12 @@ func main() {
 		log.Fatalf("Cannot open the session :%v", err)
 	}
 
-	log.Println("Adding commands...")
-
-	//registeredCommands := make([]*dg.ApplicationCommand, len(commands))
-
-	//dg_session.ApplicationCommandBulkOverwrite("1205737918556147722", GUILD_ID, commands)
-	log.Println("Commands Added")
+	registeredCommands := make([]*dg.ApplicationCommand, len(commands))
+	if *REGISTER_COMMANDS {
+		log.Println("Adding commands...")
+		registeredCommands, _ = dg_session.ApplicationCommandBulkOverwrite("1205737918556147722", GUILD_ID, commands)
+		log.Println("Commands Added")
+	}
 	// for i, v := range commands {
 	// 	cmd, err := dg_session.ApplicationCommand(dg_session.State.User.ID, GUILD_ID, v)
 	// 	if err != nil {
@@ -68,14 +71,16 @@ func main() {
 	log.Println("Press CTRL+C to exit")
 	<-stop
 
-	//log.Println("Removing Commands...")
+	if *REMOVE_COMMANDS {
+		log.Println("Removing Commands...")
 
-	// for _, v := range registeredCommands {
-	// 	err := dg_session.ApplicationCommandDelete(dg_session.State.User.ID, GUILD_ID, v.ID)
-	// 	if err != nil {
-	// 		log.Panicf("Cannot delete '%v' command :%v", v.Name, err)
-	// 	}
-	// }
+		for _, v := range registeredCommands {
+			err := dg_session.ApplicationCommandDelete(dg_session.State.User.ID, GUILD_ID, v.ID)
+			if err != nil {
+				log.Panicf("Cannot delete '%v' command :%v", v.Name, err)
+			}
+		}
+	}
 
 	log.Println("Shutting Down")
 }

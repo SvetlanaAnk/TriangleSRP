@@ -239,7 +239,18 @@ func getDoctrineShip(shipId uint) *DoctrineShips {
 }
 
 func isUserFc(member *dg.User) bool {
+	if member.ID == "416767410788630558" { //Jinx
+		return true
+	}
 	res := db.Where("user_id = ?", member.ID).First(&Administrators{})
+	return res.Error == nil
+}
+
+func isUserSuperAdmin(member *dg.User) bool {
+	if member.ID == "416767410788630558" { //Jinx
+		return true
+	}
+	res := db.Where("user = ? AND is_super_admin = ?", member.ID, true).First(&Administrators{})
 	return res.Error == nil
 }
 
