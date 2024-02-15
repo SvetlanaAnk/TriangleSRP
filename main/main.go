@@ -13,8 +13,8 @@ var (
 	DISCORD_TOKEN     string
 	GUILD_ID          string
 	dg_session        *dg.Session
-	REGISTER_COMMANDS = flag.Bool("Register Commands", false, "Should commands be registered?")
-	REMOVE_COMMANDS   = flag.Bool("Remove Commands", false, "Remove all commands on shutdown.")
+	REGISTER_COMMANDS = flag.Bool("register", false, "Should commands be registered?")
+	REMOVE_COMMANDS   = flag.Bool("remove", false, "Remove all commands on shutdown.")
 )
 
 func init() {

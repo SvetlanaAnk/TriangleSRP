@@ -64,6 +64,7 @@ func init() {
 	for _, config := range serverConfigurations {
 		SRP_CHANNEL_MAP[config.GuildId] = config.SrpChannel
 	}
+
 	res := db.Where("user_id = ?", "1064094675310477353").First(&Administrators{})
 	if res.Error != nil {
 		db.Create(&Administrators{UserId: "1064094675310477353", UserName: "theblob8584", IsSuperAdmin: true})
