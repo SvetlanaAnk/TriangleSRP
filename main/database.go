@@ -16,7 +16,7 @@ type Losses struct {
 	NickName string `gorm:"index; size:60"`
 	UserId   string `gorm:"index; not null; size:100"`
 	Paid     bool   `gorm:"default:false"`
-	Batch    uint
+	Batch    uint   `gorm:"index"`
 	Srp      uint64 `gorm:"not null; default 1"`
 	ShipId   uint   `gorm:"not null; default 1"`
 	ShipName string `gorm:"default '"`
@@ -34,9 +34,9 @@ type ServerConfiguration struct {
 	SrpChannel string `gorm:"uniqueIndex"`
 }
 type Administrators struct {
-	UserId       string `gorm:"primaryKey"`
-	UserName     string
-	IsSuperAdmin bool `gorm:"default: false"`
+	UserId     string `gorm:"primaryKey"`
+	UserName   string
+	SuperAdmin bool `gorm:"default: false"`
 }
 
 type Ships struct {
@@ -67,10 +67,10 @@ func init() {
 
 	res := db.Where("user_id = ?", "1064094675310477353").First(&Administrators{})
 	if res.Error != nil {
-		db.Create(&Administrators{UserId: "1064094675310477353", UserName: "theblob8584", IsSuperAdmin: true})
+		db.Create(&Administrators{UserId: "1064094675310477353", UserName: "theblob8584", SuperAdmin: true})
 	}
 	res = db.Where("user_id = ?", "416767410788630558").First(&Administrators{})
 	if res.Error != nil {
-		db.Create(&Administrators{UserId: "416767410788630558", UserName: "jinxdecaire", IsSuperAdmin: true})
+		db.Create(&Administrators{UserId: "416767410788630558", UserName: "jinxdecaire", SuperAdmin: true})
 	}
 }

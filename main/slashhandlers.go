@@ -137,7 +137,7 @@ func removeLoss(session *dg.Session, interaction *dg.InteractionCreate) {
 		return
 	}
 
-	result := db.Where("url = ?", parsedLink).Delete(&loss)
+	result := db.Delete(&loss)
 
 	if result.Error == nil {
 		sendSimpleEmbedResponse(session, interaction, fmt.Sprintf("Loss has been removed: %v", link), "Loss Removed")
@@ -438,7 +438,7 @@ func addFc(session *dg.Session, interaction *dg.InteractionCreate) {
 		sendSimpleEmbedResponse(session, interaction, "User is already an fc", "Unecessary")
 		return
 	}
-	admin := Administrators{UserId: user.ID, UserName: user.Username, IsSuperAdmin: false}
+	admin := Administrators{UserId: user.ID, UserName: user.Username}
 	res := db.Create(&admin)
 
 	if res.Error == nil {
