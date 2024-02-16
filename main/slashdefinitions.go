@@ -127,33 +127,9 @@ var (
 			Description: "Print srp totals ",
 			Options: []*dg.ApplicationCommandOption{
 				{
-					Type:        dg.ApplicationCommandOptionBoolean,
-					Name:        "include-zkill",
-					Description: "Should I include zkill links?",
-					Required:    false,
-				},
-				{
 					Type:        dg.ApplicationCommandOptionUser,
 					Name:        "user",
 					Description: "Fetch the srp totals for a specific user",
-					Required:    false,
-				},
-				{
-					Type:        dg.ApplicationCommandOptionUser,
-					Name:        "include-warnings",
-					Description: "Should I include loss warnings?",
-					Required:    false,
-				},
-			},
-		},
-		{
-			Name:        "user-srp-total",
-			Description: "Get the losses and srp total for a user",
-			Options: []*dg.ApplicationCommandOption{
-				{
-					Type:        dg.ApplicationCommandOptionUser,
-					Name:        "user",
-					Description: "Fetch totals for a specific player",
 					Required:    false,
 				},
 			},

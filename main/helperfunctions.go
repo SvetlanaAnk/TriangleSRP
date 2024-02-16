@@ -13,14 +13,14 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-func sendInteractionResponse(session *dg.Session, interaction *dg.InteractionCreate, message string) {
-	session.InteractionRespond(interaction.Interaction, &dg.InteractionResponse{
-		Type: dg.InteractionResponseChannelMessageWithSource,
-		Data: &dg.InteractionResponseData{
-			Content: message,
-		},
-	})
-}
+// func sendInteractionResponse(session *dg.Session, interaction *dg.InteractionCreate, message string) {
+// 	session.InteractionRespond(interaction.Interaction, &dg.InteractionResponse{
+// 		Type: dg.InteractionResponseChannelMessageWithSource,
+// 		Data: &dg.InteractionResponseData{
+// 			Content: message,
+// 		},
+// 	})
+// }
 
 func sendSimpleEmbedResponse(session *dg.Session, interaction *dg.InteractionCreate, message string, title string) {
 	embed := []*dg.MessageEmbed{
@@ -42,7 +42,30 @@ func sendSimpleEmbedResponse(session *dg.Session, interaction *dg.InteractionCre
 	})
 }
 
-func addKill(nickName string, userID string, link string, userIsFc bool, customSrp uint64) string {
+func sendEmbedResponse(session *dg.Session, interaction *dg.InteractionCreate, embed []*dg.MessageEmbed) {
+	session.InteractionRespond(interaction.Interaction, &dg.InteractionResponse{
+		Type: dg.InteractionResponseChannelMessageWithSource,
+		Data: &dg.InteractionResponseData{
+			Embeds: embed,
+		},
+	})
+}
+
+func generateSimpleEmbed(title string, description string, name string, value string) *dg.MessageEmbed {
+	embed := &dg.MessageEmbed{
+		Title:       title,
+		Description: description,
+		Fields: []*dg.MessageEmbedField{
+			{
+				Name:  name,
+				Value: value,
+			},
+		},
+	}
+	return embed
+}
+
+func addKill(nickName string, userID string, link string, userIsFc bool, customSrp uint64) *dg.MessageEmbed {
 	warning := ""
 	shortenedWarning := ""
 	srp := uint64(1)
@@ -51,24 +74,31 @@ func addKill(nickName string, userID string, link string, userIsFc bool, customS
 	parsedLink := regexMatchZkill(strings.ToLower(link))
 
 	if parsedLink == "" {
-		return fmt.Sprintf("Invalid Zkill format: %v", link)
+		return generateSimpleEmbed("❔ Invalid Link ❔", "The Zkill link you have submitted is invalid", "Link", link)
 	}
 
 	// Check if this loss already exists on the Srp sheet
 	loss := *getLossFromLink(parsedLink)
 	if loss != (Losses{}) {
-		return fmt.Sprintf("Link has already been submitted\n%v", link)
+		return generateSimpleEmbed("❌ Invalid Link ❌", "The Zkill link you have submitted already exists", "Link", link)
 	}
 
 	//Query the Zkill and Eve api's for needed information
 	eveLossData := getLossFromApi(parsedLink)
+	if eveLossData == nil {
+		return generateSimpleEmbed("❌ Sql Error ❌", "The Zkill link you have submitted caused a Sql Error", "Link", link)
+	}
+	res := db.Select("kill_mail_id").Where("kill_mail_id = ?", eveLossData.KillmailId).First(&Losses{})
 
+	if res.Error == nil {
+		return generateSimpleEmbed("❌ Invalid Link ❌", "The Zkill link you have submitted already exists", "Link", link)
+	}
 	ship := getDoctrineShip(uint(eveLossData.ShipTypeId))
 
 	// Check if the ship is a doctrine ship.
 	if *ship == (DoctrineShips{}) {
 		if !userIsFc {
-			return fmt.Sprintf("%v: Ship is not a valid doctrine ship, please ask an FC to override", link)
+			return generateSimpleEmbed("❌ Invalid Ship ❌", "This ship is not a valid doctrine ship", "Link", link)
 		} else {
 			warning += "\tShip is not a registered doctrine hull\n"
 			shortenedWarning += "Not Doctrine"
@@ -81,7 +111,7 @@ func addKill(nickName string, userID string, link string, userIsFc bool, customS
 	// Check if the ship died in pochven
 	if !isPochvenSystem(eveLossData.SolarSystemId) {
 		if !userIsFc {
-			return fmt.Sprintf("%s: This ship was destroyed outside of Pochven, please ask an FC to override", link)
+			return generateSimpleEmbed("❌ Outside Pochven ❌", "This ship was destroyed outside Pochven", "Link", link)
 		} else {
 			if shortenedWarning != "" {
 				shortenedWarning += " | "
@@ -95,7 +125,7 @@ func addKill(nickName string, userID string, link string, userIsFc bool, customS
 	if customSrp != 0 {
 		srp = customSrp
 		if !userIsFc {
-			return fmt.Sprintf("%s: Only an FC can specify a custom Srp amount.", link)
+			return generateSimpleEmbed("❌ Permission Denied ❌", "Only an Fc can specify a custom Srp Amount", "Link", link)
 		}
 	}
 
@@ -112,14 +142,37 @@ func addKill(nickName string, userID string, link string, userIsFc bool, customS
 	}
 
 	//Submit the loss to the database, and report the result to the user
-	loss = Losses{NickName: nickName, UserId: userID, Url: parsedLink, Srp: srp, ShipId: uint(eveLossData.ShipTypeId), ShipName: ship.Name, Warnings: shortenedWarning}
+	loss = Losses{NickName: nickName, UserId: userID, Url: parsedLink, Srp: srp, ShipId: uint(eveLossData.ShipTypeId), ShipName: ship.Name, Warnings: shortenedWarning, KillMailId: loss.KillMailId}
 
 	creationResult := db.Create(&loss)
 
 	if creationResult.Error != nil {
-		return fmt.Sprintf("SQL Error submitting Link. %v", link)
+		return generateSimpleEmbed("❌ Sql Error ❌", "The Zkill link you have submitted caused a Sql Error", "Link", link)
 	} else {
-		return fmt.Sprintf("Submitted successfully\nLoss: %s\nAmount: %v million isk\nCapsuleer: %v\n%s", link, srp, nickName, warning)
+		embed := &dg.MessageEmbed{
+
+			Title:       "✅ Loss Submitted! ✅",
+			Description: fmt.Sprintf("Your %s loss has been submitted", loss.ShipName),
+			Fields: []*dg.MessageEmbedField{
+				{
+					Name:  "🔗 link",
+					Value: parsedLink,
+				},
+				{
+
+					Name:  "💰 Srp",
+					Value: fmt.Sprintf("%d Million Isk", srp),
+				},
+			},
+		}
+		if warning != "" {
+			embed.Fields = append(embed.Fields, &dg.MessageEmbedField{
+				Name:  "Warnings",
+				Value: warning,
+			},
+			)
+		}
+		return embed
 	}
 }
 
@@ -303,22 +356,50 @@ func getLossFromLink(link string) *Losses {
 	return &loss
 }
 
-func generateDoctrineShipString(ships []DoctrineShips) string {
-	shipString := ""
-	for _, ship := range ships {
-		shipString += fmt.Sprintf("Name: %s ID: %d Srp: %d Million isk\n", ship.Name, ship.Ship_ID, ship.Srp)
+func generateDoctrineShipEmbed(ships []DoctrineShips) *dg.MessageEmbed {
+	embed := &dg.MessageEmbed{
+
+		Title:       "✈️ Doctrine Ships 🛩️",
+		Description: "All registered doctrine ships",
+		Fields: []*dg.MessageEmbedField{
+			{
+
+				Name:   "✈️ Name",
+				Inline: true,
+			},
+			{
+				Name:   "🪪 Id",
+				Inline: true,
+			},
+			{
+
+				Name:   "💰 Srp",
+				Inline: true,
+			},
+		},
 	}
-	return shipString
+
+	for _, ship := range ships {
+		embed.Fields[0].Value += fmt.Sprintf("%s\n", ship.Name)
+		embed.Fields[1].Value += fmt.Sprintf("%d\n", ship.Ship_ID)
+		embed.Fields[2].Value += fmt.Sprintf("%d\n", ship.Srp)
+	}
+	return embed
 }
 
-func generateSrpTotalString(losses []Losses, printZkill bool, printWarnings bool) string {
+func generateSrpTotalEmbed(losses []Losses) *dg.MessageEmbed {
 
 	type UserLossTotal struct {
 		Total  uint64
 		Losses []*Losses
 	}
-
-	totalsString := "Loss Totals:\n"
+	embed := &dg.MessageEmbed{
+		Title:       "💵 Srp Totals 💶",
+		Description: "Loss totals and links are broken up per Capsuleer",
+		Footer: &dg.MessageEmbedFooter{
+			Text: "Any losses marked with an asterisk have warnings, and should be manually inspected.\n💰💰💰💰💰💰💰💰💰💰",
+		},
+	}
 
 	lossesMap := make(map[string]*UserLossTotal)
 
@@ -334,37 +415,70 @@ func generateSrpTotalString(losses []Losses, printZkill bool, printWarnings bool
 	}
 
 	for nickName, userLoss := range lossesMap {
-		if !printZkill {
-			continue
+		userEmbed := &dg.MessageEmbedField{
+			Name:   nickName,
+			Inline: true,
 		}
-		totalsString += fmt.Sprintf("User: %s\nLosses:\n", nickName)
+		srpEmbed := &dg.MessageEmbedField{
+			Name:   "Srp",
+			Inline: true,
+		}
 		for _, loss := range userLoss.Losses {
-			totalsString += fmt.Sprintf("\t%s\n", loss.Url)
-			if loss.Warnings != "" && printWarnings {
-				totalsString += fmt.Sprintf("\t\tWarnings: %s\n", loss.Warnings)
-			}
-		}
-		totalsString += fmt.Sprintf("Total: %d isk\n\n", userLoss.Total*1000000)
-	}
+			srpEmbed.Value += fmt.Sprintf("%s: %d\n", loss.ShipName, loss.Srp)
+			userEmbed.Value += loss.Url
+			if loss.Warnings != "" {
 
-	return totalsString
+				userEmbed.Value += "*"
+			}
+			userEmbed.Value += "\n"
+			userLoss.Total += loss.Srp
+		}
+		embed.Fields = append(embed.Fields, userEmbed, srpEmbed)
+		embed.Fields = append(embed.Fields, &dg.MessageEmbedField{Name: "Total Payout", Value: fmt.Sprintf("%d", userLoss.Total*1000000), Inline: true})
+		embed.Fields = append(embed.Fields, &dg.MessageEmbedField{})
+	}
+	return embed
+
 }
 
-func generateSrpTotalForUser(losses []Losses) string {
-	srpTotal := uint64(0)
-	totalString := fmt.Sprintf("Losses|SRP for User: %s\n", losses[0].NickName)
+func generateSrpTotalEmbedUser(losses []Losses) *dg.MessageEmbed {
+	nickName := losses[0].NickName
 
-	for _, loss := range losses {
-		totalString += fmt.Sprintf("\tShip: %s Srp: %d Million Isk\n\t\tZkill: %s\n", loss.ShipName, loss.Srp, loss.Url)
-		if loss.Warnings != "" {
-			totalString += fmt.Sprintf("\t\t%s", loss.Warnings)
-		}
-		srpTotal += loss.Srp
+	srpTotal := uint64(0)
+	embed := &dg.MessageEmbed{
+		Title:       "💵 Srp Totals  💶",
+		Description: fmt.Sprintf("Loss totals for Capsuleer: %s", nickName),
+		Footer: &dg.MessageEmbedFooter{
+			Text: "Any losses marked with an asterisk have warnings, and should be manually inspected.\n💰💰💰💰💰💰💰💰💰💰",
+		},
 	}
 
-	totalString += fmt.Sprintf("Total Srp: %d", srpTotal*1000000)
+	//totalString := fmt.Sprintf("Losses|SRP for User: %s\n", nickName)
 
-	return totalString
+	userEmbed := &dg.MessageEmbedField{
+		Name:   nickName,
+		Inline: true,
+	}
+	srpEmbed := &dg.MessageEmbedField{
+		Name:   "Srp",
+		Inline: true,
+	}
+
+	for _, loss := range losses {
+		srpEmbed.Value += fmt.Sprintf("%s: %d\n", loss.ShipName, loss.Srp)
+
+		userEmbed.Value += loss.Url
+		if loss.Warnings != "" {
+
+			userEmbed.Value += "*"
+		}
+		userEmbed.Value += "\n"
+		srpTotal += loss.Srp
+	}
+	embed.Fields = append(embed.Fields, userEmbed, srpEmbed)
+	embed.Fields = append(embed.Fields, &dg.MessageEmbedField{Name: "Total Payout", Value: fmt.Sprintf("%d", srpTotal*1000000), Inline: true})
+
+	return embed
 }
 
 func getDoctrineShipSrp(ship *DoctrineShips, eveLossData *Loss) uint64 {

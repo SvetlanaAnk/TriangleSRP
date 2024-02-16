@@ -12,15 +12,16 @@ var (
 )
 
 type Losses struct {
-	Url      string `gorm:"primaryKey"`
-	NickName string `gorm:"index; size:60"`
-	UserId   string `gorm:"index; not null; size:100"`
-	Paid     bool   `gorm:"default:false"`
-	Batch    uint   `gorm:"index"`
-	Srp      uint64 `gorm:"not null; default 1"`
-	ShipId   uint   `gorm:"not null; default 1"`
-	ShipName string `gorm:"default '"`
-	Warnings string `gorm:"default ''"`
+	KillMailId uint64 `gorm:"primaryKey"`
+	Url        string `gorm:"uniqueIndex"`
+	NickName   string `gorm:"index; size:60"`
+	UserId     string `gorm:"index; not null; size:100"`
+	Paid       bool   `gorm:"default:false"`
+	Batch      uint   `gorm:"index"`
+	Srp        uint64 `gorm:"not null; default 1"`
+	ShipId     uint   `gorm:"not null; default 1"`
+	ShipName   string `gorm:"default '"`
+	Warnings   string `gorm:"default ''"`
 }
 
 type DoctrineShips struct {
@@ -64,7 +65,6 @@ func init() {
 	for _, config := range serverConfigurations {
 		SRP_CHANNEL_MAP[config.GuildId] = config.SrpChannel
 	}
-
 	res := db.Where("user_id = ?", "1064094675310477353").First(&Administrators{})
 	if res.Error != nil {
 		db.Create(&Administrators{UserId: "1064094675310477353", UserName: "theblob8584", SuperAdmin: true})
