@@ -431,7 +431,6 @@ func generateSrpTotalEmbed(losses []Losses) *dg.MessageEmbed {
 				userEmbed.Value += "*"
 			}
 			userEmbed.Value += "\n"
-			userLoss.Total += loss.Srp
 		}
 		embed.Fields = append(embed.Fields, userEmbed, srpEmbed)
 		embed.Fields = append(embed.Fields, &dg.MessageEmbedField{Name: "Total Payout", Value: fmt.Sprintf("%d", userLoss.Total*1000000), Inline: true})
