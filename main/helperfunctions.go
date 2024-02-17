@@ -387,17 +387,19 @@ func generateDoctrineShipEmbed(ships []DoctrineShips) *dg.MessageEmbed {
 	return embed
 }
 
-func generateSrpTotalEmbed(losses []Losses) *dg.MessageEmbed {
-
+func generateSrpTotalEmbed(losses []Losses) []*dg.MessageEmbed {
+	counter := 0
 	type UserLossTotal struct {
 		Total  uint64
 		Losses []*Losses
 	}
-	embed := &dg.MessageEmbed{
-		Title:       "💵 Srp Totals 💶",
-		Description: "Loss totals and links are broken up per Capsuleer",
-		Footer: &dg.MessageEmbedFooter{
-			Text: "Any losses marked with an asterisk have warnings, and should be manually inspected.\n💰💰💰💰💰💰💰💰💰💰",
+	embed := []*dg.MessageEmbed{
+		{
+			Title:       "💵 Srp Totals 💶",
+			Description: "Loss totals and links are broken up per Capsuleer",
+			Footer: &dg.MessageEmbedFooter{
+				Text: "Any losses marked with an asterisk have warnings, and should be manually inspected.\n💰💰💰💰💰💰💰💰💰💰",
+			},
 		},
 	}
 
@@ -432,9 +434,17 @@ func generateSrpTotalEmbed(losses []Losses) *dg.MessageEmbed {
 			}
 			userEmbed.Value += "\n"
 		}
-		embed.Fields = append(embed.Fields, userEmbed, srpEmbed)
-		embed.Fields = append(embed.Fields, &dg.MessageEmbedField{Name: "Total Payout", Value: fmt.Sprintf("%d", userLoss.Total*1000000), Inline: true})
-		embed.Fields = append(embed.Fields, &dg.MessageEmbedField{})
+		if len(embed[counter].Fields) >= 21 {
+			counter += 1
+			embed = append(embed, &dg.MessageEmbed{Title: fmt.Sprintf("💵 Srp Totals Page: %d 💶", counter+1),
+				Description: "Loss totals and links are broken up per Capsuleer",
+				Footer: &dg.MessageEmbedFooter{
+					Text: "Any losses marked with an asterisk have warnings, and should be manually inspected.\n💰💰💰💰💰💰💰💰💰💰",
+				}})
+		}
+		embed[counter].Fields = append(embed[counter].Fields, userEmbed, srpEmbed)
+		embed[counter].Fields = append(embed[counter].Fields, &dg.MessageEmbedField{Name: "Total Payout", Value: fmt.Sprintf("%d", userLoss.Total*1000000), Inline: true})
+		embed[counter].Fields = append(embed[counter].Fields, &dg.MessageEmbedField{})
 	}
 	return embed
 

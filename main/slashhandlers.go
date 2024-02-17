@@ -435,13 +435,13 @@ func srpTotals(session *dg.Session, interaction *dg.InteractionCreate) {
 		sendSimpleEmbedResponse(session, interaction, "No unpaid losses found", "❔ None Found ❔")
 		return
 	}
-	var embed *dg.MessageEmbed
+	var embeds []*dg.MessageEmbed
 	if user == nil {
-		embed = generateSrpTotalEmbed(losses)
+		embeds = generateSrpTotalEmbed(losses)
 	} else {
-		embed = generateSrpTotalEmbedUser(losses)
+		embeds = []*dg.MessageEmbed{generateSrpTotalEmbedUser(losses)}
 	}
-	sendEmbedResponse(session, interaction, []*dg.MessageEmbed{embed})
+	sendEmbedResponse(session, interaction, embeds)
 
 }
 
